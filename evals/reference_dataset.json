@@ -1,0 +1,15 @@
+{
+  "id": "release.reference",
+  "version": "1.0.0",
+  "cases": [
+    {
+      "id": "offline-greeting",
+      "input": "Say hello",
+      "assertions": [
+        {"kind": "status", "expected": "completed"},
+        {"kind": "contains", "expected": "hello", "case_sensitive": false}
+      ],
+      "metadata": {"network": false}
+    }
+  ]
+}

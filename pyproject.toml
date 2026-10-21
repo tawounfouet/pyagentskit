@@ -1,0 +1,189 @@
+[build-system]
+# Hatchling 1.30+ emits Core Metadata 2.5, which Twine 6.2 cannot yet validate.
+requires = ["hatchling>=1.27,<1.30"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pyagentskit"
+version = "1.6.0"
+description = "A typed, observable, provider-neutral runtime foundation for Python AI agents."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+authors = [
+  { name = "Thomas AWOUNFOUET" },
+]
+keywords = ["agents", "ai", "llm", "python", "tool-calling"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Typing :: Typed",
+]
+dependencies = [
+  "pydantic>=2.10,<3",
+]
+
+[project.optional-dependencies]
+openai = ["httpx>=0.27,<1"]
+anthropic = ["httpx>=0.27,<1"]
+google = ["httpx>=0.27,<1"]
+xai = ["httpx>=0.27,<1"]
+ollama = ["httpx>=0.27,<1"]
+openrouter = ["httpx>=0.27,<1"]
+providers = ["httpx>=0.27,<1"]
+opentelemetry = ["opentelemetry-api>=1.30,<2"]
+postgres = ["asyncpg>=0.31,<1"]
+s3 = ["boto3>=1.35,<2"]
+azure = ["azure-storage-blob>=12.20,<13"]
+production-stores = [
+  "asyncpg>=0.31,<1",
+  "boto3>=1.35,<2",
+  "azure-storage-blob>=12.20,<13",
+]
+dev = [
+  "httpx>=0.27,<1",
+  "build>=1.2,<2",
+  "mypy>=1.15,<2",
+  "pytest>=8.3,<9",
+  "pytest-cov>=6,<8",
+  "ruff>=0.11,<1",
+  "twine>=6,<7",
+]
+
+[project.scripts]
+pyagentskit = "pyagentskit.cli:main"
+
+[project.urls]
+Documentation = "https://github.com/tawounfouet/pyagentskit#readme"
+Issues = "https://github.com/tawounfouet/pyagentskit/issues"
+Repository = "https://github.com/tawounfouet/pyagentskit"
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src",
+  "/tests",
+  "/docs",
+  "/README.md",
+  "/CHANGELOG.md",
+  "/LOT_02_RELEASE_NOTES.md",
+  "/BETA_1_RELEASE_NOTES.md",
+  "/RELEASE_NOTES.md",
+  "/STABLE_RELEASE_NOTES.md",
+  "/OPENROUTER_ALPHA1_RELEASE_NOTES.md",
+  "/OPENROUTER_BETA1_RELEASE_NOTES.md",
+  "/OPENROUTER_QUALIFICATION.md",
+  "/OPENROUTER_ADVANCED_QUALIFICATION.md",
+  "/OPENROUTER_RC1_RELEASE_NOTES.md",
+  "/OPENROUTER_RC1_QUALIFICATION.md",
+  "/OPENROUTER_STABLE_RELEASE_NOTES.md",
+  "/OPENROUTER_COMPATIBILITY_MATRIX.md",
+  "/OPENROUTER_API_STABILITY.md",
+  "/AUDIT_OPENROUTER_BETA1.md",
+  "/AUDIT_OPENROUTER_RC1.md",
+  "/LOT_08_RELEASE_NOTES.md",
+  "/LOT_08_QUALIFICATION.md",
+  "/LOT_08_API_STABILITY.md",
+  "/AUDIT_LOT_08.md",
+  "/LOT_09_RELEASE_NOTES.md",
+  "/LOT_09_QUALIFICATION.md",
+  "/LOT_09_API_STABILITY.md",
+  "/AUDIT_LOT_09.md",
+  "/LOT_10_RELEASE_NOTES.md",
+  "/LOT_10_QUALIFICATION.md",
+  "/LOT_10_API_STABILITY.md",
+  "/AUDIT_LOT_10.md",
+  "/LOT_11_RELEASE_NOTES.md",
+  "/LOT_11_QUALIFICATION.md",
+  "/LOT_11_API_STABILITY.md",
+  "/AUDIT_LOT_11.md",
+  "/BENCHMARK_RESULTS.md",
+  "/MIGRATION_TO_V1.md",
+  "/DEPRECATION_POLICY.md",
+  "/V1_RELEASE_NOTES.md",
+  "/V1_QUALIFICATION.md",
+  "/V1_API_STABILITY.md",
+  "/V1_COMPATIBILITY_MATRIX.md",
+  "/V1_SECURITY_AUDIT.md",
+  "/AUDIT_V1.md",
+  "/V1_1_RELEASE_NOTES.md",
+  "/V1_1_QUALIFICATION.md",
+  "/V1_1_API_COMPATIBILITY.md",
+  "/AUDIT_V1_1.md",
+  "/02_PYAGENTSKIT_POST_V1_ROADMAP.md",
+  "/V1_2_RELEASE_NOTES.md",
+  "/V1_2_QUALIFICATION.md",
+  "/V1_2_API_COMPATIBILITY.md",
+  "/AUDIT_V1_2.md",
+  "/V1_3_RELEASE_NOTES.md",
+  "/V1_3_QUALIFICATION.md",
+  "/V1_3_API_COMPATIBILITY.md",
+  "/V1_3_STORE_COMPATIBILITY.md",
+  "/AUDIT_V1_3.md",
+  "/V1_4_RELEASE_NOTES.md",
+  "/V1_4_QUALIFICATION.md",
+  "/V1_4_API_COMPATIBILITY.md",
+  "/V1_4_STORE_COMPATIBILITY.md",
+  "/AUDIT_V1_4.md",
+  "/V1_5_RELEASE_NOTES.md",
+  "/V1_5_QUALIFICATION.md",
+  "/V1_5_API_COMPATIBILITY.md",
+  "/V1_5_DISTRIBUTED_EXECUTION_MATRIX.md",
+  "/AUDIT_V1_5.md",
+  "/V1_6_RELEASE_NOTES.md",
+  "/V1_6_QUALIFICATION.md",
+  "/V1_6_API_COMPATIBILITY.md",
+  "/V1_6_OPERATIONS_MATRIX.md",
+  "/AUDIT_V1_6.md",
+  "/AUDIT_RC2.md",
+  "/PROVIDER_QUALIFICATION.md",
+  "/CHECK_RESULTS.md",
+  "/CONTRIBUTING.md",
+  "/LICENSE",
+  "/NOTICE",
+  "/SECURITY.md",
+  "/examples",
+  "/evals",
+  "/scripts",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pyagentskit"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-config --strict-markers --cov=pyagentskit --cov-report=term-missing"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["pyagentskit"]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+skip_covered = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "SIM", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unreachable = true
+plugins = ["pydantic.mypy"]
+packages = ["pyagentskit"]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
