@@ -476,10 +476,14 @@ class EffectExecutionGateTests(unittest.IsolatedAsyncioTestCase):
     async def test_existing_succeeded_effect_is_reused_without_replay(self) -> None:
         key = IdempotencyKey("run", "publish-package")
         fingerprint = InputFingerprint.from_text("pkg=pyagentskit;version=2.0.0a3")
-        succeeded = Effect(
-            idempotency_key=key,
-            fingerprint=fingerprint,
-        ).begin().mark_succeeded()
+        succeeded = (
+            Effect(
+                idempotency_key=key,
+                fingerprint=fingerprint,
+            )
+            .begin()
+            .mark_succeeded()
+        )
         repo = MemoryEffectRepository(succeeded)
         gate = EffectExecutionGate(effects=repo, audit=MemoryAuditSink())
         duplicate_intent = Effect(
