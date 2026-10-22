@@ -1,5 +1,54 @@
 # Changelog
 
+## [2.0.0a4] - 2026-10-22
+
+### Added
+
+- Added the complete V2 persistence contract catalog for Run, Session, Conversation, Message,
+  Memory, Effect, Reconciliation, Approval, Lease, Worker, Runtime and Artifact state.
+- Added technology-neutral Audit, Outbox, Inbox, BlobStore and UnitOfWork contracts.
+- Added SQLite and PostgreSQL V2 persistence adapters with versioned incremental schema
+  migrations.
+- Added durable RuntimeBinding and RuntimeInvocation persistence.
+- Added shared P0 persistence contract tests executed against Memory, SQLite and real PostgreSQL.
+- Added real PostgreSQL multi-process lease contention qualification.
+- Added the offline `examples/v2_persistence.py` example and V2 persistence guide.
+
+### Changed
+
+- Extended UnitOfWork to cover the full P0 persistence catalog.
+- Enforced compare-and-swap semantics for versioned aggregate writes.
+- Preserved canonical domain errors through PostgreSQL adapter boundaries.
+- Advanced the V2 persistence schema from version 1 to version 2 through explicit migrations.
+- Updated the Native adapter and package release metadata to `2.0.0a4`.
+
+### Safety
+
+- Effect idempotency is physically durable and rejects same-key/different-fingerprint reuse.
+- At most one active lease may own a protected resource at a time.
+- Fencing tokens remain monotonic across takeover.
+- Domain state, Audit and Outbox changes may commit atomically in one local transaction.
+- Outbox claims can be reclaimed after publisher failure without claiming universal exactly-once
+  delivery.
+- Inbox same-ID/different-digest delivery fails closed.
+- Restore/PITR is not treated as authorization to replay an ambiguous Effect.
+
+### Qualification
+
+- Python 3.11, 3.12 and 3.13 test matrices.
+- Coverage gate at or above 90%.
+- Real PostgreSQL 16 qualification.
+- Shared P0 repository contract suite.
+- Multi-process lease contention.
+- Incremental SQLite schema migration from v1 to v2.
+- Reproducible wheel/sdist build and clean wheel smoke install.
+
+### Not Included
+
+- Enterprise governance/security policy engines remain `2.0.0b1`.
+- External runtimes and write-capable connectors remain `2.0.0b2`.
+- Multi-region database architecture remains out of scope.
+
 ## [2.0.0a3] - 2026-10-22
 
 ### Added
