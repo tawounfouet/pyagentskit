@@ -14,6 +14,7 @@ from ..domain.entities import (
     Conversation,
     ConversationMessage,
     Lease,
+    MemoryEntry,
     Run,
     RuntimeBinding,
     RuntimeInvocation,
@@ -25,8 +26,10 @@ from ..domain.lifecycle import RunStatus
 from ..domain.shared import (
     AggregateVersion,
     ApprovalId,
+    FencingToken,
     ArtifactId,
     ConversationId,
+    MemoryEntryId,
     MessageId,
     RunId,
     RuntimeBindingId,
@@ -92,6 +95,25 @@ class SessionRepository(Protocol):
 
 
 @runtime_checkable
+class MemoryRepository(Protocol):
+    async def get(self, memory_id: MemoryEntryId) -> MemoryEntry | None: ...
+    async def put(self, entry: MemoryEntry) -> None: ...
+    async def save(
+        self,
+        entry: MemoryEntry,
+        *,
+        expected_version: AggregateVersion,
+    ) -> None: ...
+    async def list_by_scope(
+        self,
+        *,
+        tenant_id: str,
+        scope: str,
+        scope_id: str | None,
+    ) -> tuple[MemoryEntry, ...]: ...
+
+
+@runtime_checkable
 class ConversationRepository(Protocol):
     async def get(self, conversation_id: ConversationId) -> Conversation | None: ...
     async def add(self, conversation: Conversation) -> None: ...
@@ -132,7 +154,7 @@ class LeaseRepository(Protocol):
     async def get_current(self, resource: str) -> Lease | None: ...
     async def add(self, lease: Lease) -> None: ...
     async def save(self, lease: Lease, *, expected_version: AggregateVersion) -> None: ...
-    async def next_fencing_token(self, resource: str) -> int: ...
+    async def next_fencing_token(self, resource: str) -> FencingToken: ...
 
 
 @runtime_checkable
@@ -189,6 +211,7 @@ class InboxStore(Protocol):
 class UnitOfWork(Protocol):
     runs: RunRepository
     effects: EffectRepository
+    memories: MemoryRepository
     reconciliations: ReconciliationRepository
     approvals: ApprovalRepository
     outbox: OutboxStore
@@ -218,6 +241,7 @@ __all__ = [
     "InboxStatus",
     "InboxStore",
     "LeaseRepository",
+    "MemoryRepository",
     "MessageRepository",
     "OutboxRecord",
     "OutboxStatus",
