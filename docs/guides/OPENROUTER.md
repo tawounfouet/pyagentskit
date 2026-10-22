@@ -190,13 +190,13 @@ pytest tests/test_openrouter_provider.py
 ```
 
 Additional independently gated compliance and expected-fallback tests are documented in
-`OPENROUTER_RC1_QUALIFICATION.md`. They cap completion output at 16 tokens but can still incur
+`../qualification/OPENROUTER_RC1_QUALIFICATION.md`. They cap completion output at 16 tokens but can still incur
 charges. The release contract tests use HTTPX mock transports and require no credentials.
 
 ## Stable API
 
 The public imports, constructors, methods, serialized policy/descriptor fields and profile values
-are frozen for the `0.2.x` line. See `OPENROUTER_API_STABILITY.md`. Dynamic model catalog entries,
+are frozen for the `0.2.x` line. See `../compatibility/OPENROUTER_API_STABILITY.md`. Dynamic model catalog entries,
 provider availability, prices and additive response metadata remain upstream-controlled.
 
 ## Official references

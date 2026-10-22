@@ -19,4 +19,4 @@ Existing 0.5.0 APIs remain compatible. The CLI performs no automatic provider ca
 application Python code and prints no secret values. OpenTelemetry receives correlation metadata,
 not event payloads. Live provider tests remain opt-in.
 
-See `LOT_11_QUALIFICATION.md`, `AUDIT_LOT_11.md` and `CHECK_RESULTS.md` for release evidence.
+See `../qualification/LOT_11_QUALIFICATION.md`, `../audits/AUDIT_LOT_11.md` and `../verification/CHECK_RESULTS.md` for release evidence.

@@ -35,5 +35,5 @@ All automated tests use hand-authored HTTP fixtures. No authenticated or billabl
 was made. The included live test remains opt-in and does not prove every catalog capability,
 provider endpoint, privacy setting or fallback path.
 
-See `OPENROUTER_ADVANCED_QUALIFICATION.md`, `docs/guides/OPENROUTER.md`, ADR-0013 and
-`CHECK_RESULTS.md`.
+See `../qualification/OPENROUTER_ADVANCED_QUALIFICATION.md`, `../guides/OPENROUTER.md`, ADR-0013 and
+`../verification/CHECK_RESULTS.md`.

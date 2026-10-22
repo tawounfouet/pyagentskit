@@ -59,4 +59,4 @@ The following are deliberate scope boundaries, not unresolved release blockers:
 
 No known critical or high-severity finding remains open within the declared `0.1.0` scope. The
 release is qualified as a stable pre-1.0 development library, subject to the accepted limitations
-and the provider evidence boundary documented in `PROVIDER_QUALIFICATION.md`.
+and the provider evidence boundary documented in `../qualification/PROVIDER_QUALIFICATION.md`.

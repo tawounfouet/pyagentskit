@@ -20,7 +20,7 @@ catalog entries, provider availability and prices are excluded. Security fixes m
 or unsafe input acceptance.
 
 The contract is enforced by `tests/test_openrouter_stable_api.py` and documented in
-`OPENROUTER_API_STABILITY.md`.
+`../compatibility/OPENROUTER_API_STABILITY.md`.
 
 ## Consequences
 

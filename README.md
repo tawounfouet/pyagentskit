@@ -61,9 +61,9 @@ qualification. The V1 baseline includes:
 
 All adapters are contract-qualified with HTTPX request/response objects and official wire
 formats. Governance qualification is entirely local and deterministic. See the
-[V1 qualification](V1_QUALIFICATION.md),
+[V1 qualification](docs/qualification/V1_QUALIFICATION.md),
 [evaluation guide](docs/guides/EVALUATIONS.md) and
-[V1 API stability contract](V1_API_STABILITY.md).
+[V1 API stability contract](docs/compatibility/V1_API_STABILITY.md).
 
 ## Install
 
@@ -179,10 +179,10 @@ python scripts/release_check.py
 The check runs formatting, linting, strict typing, tests with coverage, byte compilation, the
 runtime benchmark, reproducible package builds, metadata validation, wheel installation and
 offline smoke scenarios. See
-[release evidence](CHECK_RESULTS.md),
-[1.6 qualification](V1_6_QUALIFICATION.md),
-[1.6 audit](AUDIT_V1_6.md) and
-[release notes](V1_6_RELEASE_NOTES.md).
+[release evidence](docs/verification/CHECK_RESULTS.md),
+[1.6 qualification](docs/qualification/V1_6_QUALIFICATION.md),
+[1.6 audit](docs/audits/AUDIT_V1_6.md) and
+[release notes](docs/releases/V1_6_RELEASE_NOTES.md).
 
 ## Architecture boundaries
 

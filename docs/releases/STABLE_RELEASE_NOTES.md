@@ -61,8 +61,8 @@ Run:
 python scripts/release_check.py
 ```
 
-Measured results for this archive are recorded in `CHECK_RESULTS.md`. The detailed RC2 findings
-and provider evidence are in `AUDIT_RC2.md` and `PROVIDER_QUALIFICATION.md`.
+Measured results for this archive are recorded in `../verification/CHECK_RESULTS.md`. The detailed RC2 findings
+and provider evidence are in `../audits/AUDIT_RC2.md` and `../qualification/PROVIDER_QUALIFICATION.md`.
 
 ## Next milestone
 

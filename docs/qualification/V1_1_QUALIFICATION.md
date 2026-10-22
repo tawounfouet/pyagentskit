@@ -1,7 +1,7 @@
 # PyAgentsKit 1.1.0 qualification
 
 Qualification is deterministic and network-free. The full evidence is recorded in
-`CHECK_RESULTS.md` after the release-check.
+`../verification/CHECK_RESULTS.md` after the release-check.
 
 ## Feature matrix
 

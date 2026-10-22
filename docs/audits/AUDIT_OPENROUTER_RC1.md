@@ -71,6 +71,6 @@ compatibility matrix, security policy and qualification guide.
 - `tests/test_openrouter_provider.py` — minimal adapter protocol;
 - `tests/test_openrouter_advanced.py` — routing, catalog, resilience and metadata;
 - `tests/test_openrouter_live_qualification.py` — separately gated live paths;
-- `CHECK_RESULTS.md` — final reproducible release-check;
-- `OPENROUTER_COMPATIBILITY_MATRIX.md` — qualification boundary;
-- `OPENROUTER_API_STABILITY.md` — patch-line compatibility policy.
+- `../verification/CHECK_RESULTS.md` — final reproducible release-check;
+- `../compatibility/OPENROUTER_COMPATIBILITY_MATRIX.md` — qualification boundary;
+- `../compatibility/OPENROUTER_API_STABILITY.md` — patch-line compatibility policy.

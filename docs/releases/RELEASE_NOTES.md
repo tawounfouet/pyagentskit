@@ -5,8 +5,8 @@ payload-free operational metrics/audit/traces, real process crash qualification 
 two-worker PostgreSQL takeover test. The mono-agent, no-scheduler and no-effect-replay boundaries
 remain unchanged.
 
-See `V1_6_RELEASE_NOTES.md`, `V1_6_QUALIFICATION.md`, `V1_6_API_COMPATIBILITY.md`,
-`V1_6_OPERATIONS_MATRIX.md` and `AUDIT_V1_6.md`.
+See `V1_6_RELEASE_NOTES.md`, `../qualification/V1_6_QUALIFICATION.md`, `../compatibility/V1_6_API_COMPATIBILITY.md`,
+`../compatibility/V1_6_OPERATIONS_MATRIX.md` and `../audits/AUDIT_V1_6.md`.
 
 ## Historical 1.5.0 notes
 
@@ -17,8 +17,8 @@ boundary with finite renewal, immediate stale-worker shutdown, typed fencing-tok
 and takeover through the existing recovery plan. No effect is replayed implicitly and the V1 API
 freeze remains unchanged.
 
-See `V1_5_RELEASE_NOTES.md`, `V1_5_QUALIFICATION.md`, `V1_5_API_COMPATIBILITY.md`,
-`V1_5_DISTRIBUTED_EXECUTION_MATRIX.md` and `AUDIT_V1_5.md`.
+See `V1_5_RELEASE_NOTES.md`, `../qualification/V1_5_QUALIFICATION.md`, `../compatibility/V1_5_API_COMPATIBILITY.md`,
+`../compatibility/V1_5_DISTRIBUTED_EXECUTION_MATRIX.md` and `../audits/AUDIT_V1_5.md`.
 
 ## Historical 1.4.0 notes
 
@@ -28,8 +28,8 @@ PyAgentsKit 1.4.0 completes the production persistence path with PostgreSQL sess
 approval stores, provider-neutral blob storage, S3/Azure artifacts, versioned migrations, RLS SQL
 and an explicit SQLite-to-PostgreSQL command. The V1 API freeze remains unchanged.
 
-See `V1_4_RELEASE_NOTES.md`, `V1_4_QUALIFICATION.md`, `V1_4_API_COMPATIBILITY.md`,
-`V1_4_STORE_COMPATIBILITY.md` and `AUDIT_V1_4.md`.
+See `V1_4_RELEASE_NOTES.md`, `../qualification/V1_4_QUALIFICATION.md`, `../compatibility/V1_4_API_COMPATIBILITY.md`,
+`../compatibility/V1_4_STORE_COMPATIBILITY.md` and `../audits/AUDIT_V1_4.md`.
 
 ## Historical 1.3.0 notes
 
@@ -39,8 +39,8 @@ PyAgentsKit 1.3.0 adds optional transactional PostgreSQL durable runs and a tena
 port with monotonic fencing tokens. Memory and SQLite implementations remain supported, and the
 V1 public API freeze is unchanged.
 
-See `V1_3_RELEASE_NOTES.md`, `V1_3_QUALIFICATION.md`, `V1_3_API_COMPATIBILITY.md`,
-`V1_3_STORE_COMPATIBILITY.md` and `AUDIT_V1_3.md`.
+See `V1_3_RELEASE_NOTES.md`, `../qualification/V1_3_QUALIFICATION.md`, `../compatibility/V1_3_API_COMPATIBILITY.md`,
+`../compatibility/V1_3_STORE_COMPATIBILITY.md` and `../audits/AUDIT_V1_3.md`.
 
 ## Historical 1.2.0 notes
 
@@ -51,8 +51,8 @@ failures. Every attempt consumes run limits, streams stop retrying after observa
 tool execution remains outside the retry boundary. Existing model events gain safe attempt and
 stream counters without changing the frozen `EventType` vocabulary.
 
-See `V1_2_RELEASE_NOTES.md`, `V1_2_QUALIFICATION.md`, `V1_2_API_COMPATIBILITY.md` and
-`AUDIT_V1_2.md`.
+See `V1_2_RELEASE_NOTES.md`, `../qualification/V1_2_QUALIFICATION.md`, `../compatibility/V1_2_API_COMPATIBILITY.md` and
+`../audits/AUDIT_V1_2.md`.
 
 ## Historical 1.1.0 notes
 
@@ -61,8 +61,8 @@ PyAgentsKit 1.1.0 is an additive stable release. It integrates provider-neutral 
 idempotent `PURE`/`READ` tools. All other tools remain sequential, and the V1 public API freeze is
 unchanged.
 
-See `V1_1_RELEASE_NOTES.md`, `V1_1_QUALIFICATION.md`, `V1_1_API_COMPATIBILITY.md` and
-`AUDIT_V1_1.md`.
+See `V1_1_RELEASE_NOTES.md`, `../qualification/V1_1_QUALIFICATION.md`, `../compatibility/V1_1_API_COMPATIBILITY.md` and
+`../audits/AUDIT_V1_1.md`.
 
 ## Historical 1.0.0 notes
 
@@ -71,8 +71,8 @@ root API, central serialized contracts and provider constructor surfaces are pro
 freeze tests. The stable package is release-ready through a reproducible build and trusted
 publishing workflow.
 
-The authoritative V1 evidence is in `V1_RELEASE_NOTES.md`, `V1_QUALIFICATION.md`,
-`V1_API_STABILITY.md`, `V1_COMPATIBILITY_MATRIX.md`, `V1_SECURITY_AUDIT.md` and `AUDIT_V1.md`.
+The authoritative V1 evidence is in `V1_RELEASE_NOTES.md`, `../qualification/V1_QUALIFICATION.md`,
+`../compatibility/V1_API_STABILITY.md`, `../compatibility/V1_COMPATIBILITY_MATRIX.md`, `../audits/V1_SECURITY_AUDIT.md` and `../audits/AUDIT_V1.md`.
 
 ## Historical 0.9.0 notes
 
@@ -80,8 +80,8 @@ PyAgentsKit 0.9.0 completes Lot 11 with deterministic evaluations, a dependency-
 runtime metrics, optional OpenTelemetry integration, reproducible-build enforcement and the final
 pre-V1 documentation set. It is compatible with the 0.5.0 runtime and durability baseline.
 
-The authoritative details are in `LOT_11_RELEASE_NOTES.md`, `LOT_11_QUALIFICATION.md`,
-`LOT_11_API_STABILITY.md`, `AUDIT_LOT_11.md` and `MIGRATION_TO_V1.md`.
+The authoritative details are in `LOT_11_RELEASE_NOTES.md`, `../qualification/LOT_11_QUALIFICATION.md`,
+`../compatibility/LOT_11_API_STABILITY.md`, `../audits/AUDIT_LOT_11.md` and `../planning/MIGRATION_TO_V1.md`.
 
 ## Historical 0.5.0 notes
 
@@ -91,8 +91,8 @@ Lot 10 adds opt-in `DurableRunner`, memory/SQLite `RunStore` implementations, ve
 checkpoints, an append-only analytical journal and fail-closed reconciliation of ambiguous tool
 effects. PyWorkflowKit integration is explicitly not included.
 
-See `LOT_10_RELEASE_NOTES.md`, `LOT_10_QUALIFICATION.md`, `LOT_10_API_STABILITY.md`,
-`AUDIT_LOT_10.md` and `CHECK_RESULTS.md`.
+See `LOT_10_RELEASE_NOTES.md`, `../qualification/LOT_10_QUALIFICATION.md`, `../compatibility/LOT_10_API_STABILITY.md`,
+`../audits/AUDIT_LOT_10.md` and `../verification/CHECK_RESULTS.md`.
 
 ## Previous stable milestone
 
@@ -104,8 +104,8 @@ Lot 09 adds five fail-closed guardrail boundaries, explicit data egress policy, 
 helpers, persistent tenant-scoped approvals and single-consumption suspension/resume for sensitive
 tool calls. General crash recovery remains deliberately assigned to Lot 10.
 
-See `LOT_09_RELEASE_NOTES.md`, `LOT_09_QUALIFICATION.md`, `LOT_09_API_STABILITY.md`,
-`AUDIT_LOT_09.md` and `CHECK_RESULTS.md`.
+See `LOT_09_RELEASE_NOTES.md`, `../qualification/LOT_09_QUALIFICATION.md`, `../compatibility/LOT_09_API_STABILITY.md`,
+`../audits/AUDIT_LOT_09.md` and `../verification/CHECK_RESULTS.md`.
 
 ## Previous stable milestone
 
@@ -117,8 +117,8 @@ Lot 08 adds opt-in tenant-scoped conversation state, memory/SQLite stores, expla
 selection, external retrieval hooks and integrity-checked artifacts. Stateless Runner behavior and
 all six provider adapters remain compatible.
 
-See `LOT_08_RELEASE_NOTES.md`, `LOT_08_QUALIFICATION.md`, `LOT_08_API_STABILITY.md`,
-`AUDIT_LOT_08.md` and `CHECK_RESULTS.md`.
+See `LOT_08_RELEASE_NOTES.md`, `../qualification/LOT_08_QUALIFICATION.md`, `../compatibility/LOT_08_API_STABILITY.md`,
+`../audits/AUDIT_LOT_08.md` and `../verification/CHECK_RESULTS.md`.
 
 ## Previous stable milestone
 
@@ -131,8 +131,8 @@ audit and publishes an explicit compatibility matrix. No application migration f
 required. Deterministic protocol, API, runtime and packaging qualification is complete; live
 account/model/compliance/fallback tests remain opt-in and were not run.
 
-See `OPENROUTER_STABLE_RELEASE_NOTES.md`, `AUDIT_OPENROUTER_RC1.md`,
-`OPENROUTER_API_STABILITY.md`, `OPENROUTER_COMPATIBILITY_MATRIX.md` and `CHECK_RESULTS.md`.
+See `OPENROUTER_STABLE_RELEASE_NOTES.md`, `../audits/AUDIT_OPENROUTER_RC1.md`,
+`../compatibility/OPENROUTER_API_STABILITY.md`, `../compatibility/OPENROUTER_COMPATIBILITY_MATRIX.md` and `../verification/CHECK_RESULTS.md`.
 
 ## Release candidate history
 
@@ -145,8 +145,8 @@ capability negotiation, terminal SSE route metadata, safe route context on failu
 HTTP 403 handling, integrity-checked snapshots and a true network-free catalog mode.
 
 All live qualification paths remain explicit opt-ins and were not executed in the release
-environment. See `AUDIT_OPENROUTER_BETA1.md`, `OPENROUTER_RC1_RELEASE_NOTES.md`,
-`OPENROUTER_RC1_QUALIFICATION.md` and `CHECK_RESULTS.md`.
+environment. See `../audits/AUDIT_OPENROUTER_BETA1.md`, `OPENROUTER_RC1_RELEASE_NOTES.md`,
+`../qualification/OPENROUTER_RC1_QUALIFICATION.md` and `../verification/CHECK_RESULTS.md`.
 
 ## Previous OpenRouter beta
 
@@ -160,8 +160,8 @@ safe subset of stable router metadata. It refuses local HTTP retries when OpenRo
 active.
 
 All qualification is offline with HTTP fixtures. No authenticated or billable call was made. See
-`OPENROUTER_BETA1_RELEASE_NOTES.md`, `OPENROUTER_ADVANCED_QUALIFICATION.md` and
-`CHECK_RESULTS.md`.
+`OPENROUTER_BETA1_RELEASE_NOTES.md`, `../qualification/OPENROUTER_ADVANCED_QUALIFICATION.md` and
+`../verification/CHECK_RESULTS.md`.
 
 ## Previous OpenRouter milestone
 
@@ -179,7 +179,7 @@ Those are deliberately deferred to `0.2.0b1` and `0.2.0rc1`.
 
 The contract suite is offline. The live OpenRouter smoke test remained skipped because no
 `OPENROUTER_API_KEY` was configured, so no authenticated or billable request was made. See
-`OPENROUTER_ALPHA1_RELEASE_NOTES.md`, `OPENROUTER_QUALIFICATION.md` and `CHECK_RESULTS.md`.
+`OPENROUTER_ALPHA1_RELEASE_NOTES.md`, `../qualification/OPENROUTER_QUALIFICATION.md` and `../verification/CHECK_RESULTS.md`.
 
 ## Stable baseline history
 
@@ -195,7 +195,7 @@ exhausted-budget handling, model identity traces, HTTP 408 normalization and res
 All offline tests, strict typing, formatting, linting, package checks and isolated wheel smoke tests
 must pass through `python scripts/release_check.py`. The five provider adapters are contract-qualified
 against mocked HTTP transports. Live provider execution was unavailable for this build and is not
-claimed. See `PROVIDER_QUALIFICATION.md`, `AUDIT_RC2.md` and `CHECK_RESULTS.md`.
+claimed. See `../qualification/PROVIDER_QUALIFICATION.md`, `../audits/AUDIT_RC2.md` and `../verification/CHECK_RESULTS.md`.
 
 ## Release candidate history
 
@@ -205,7 +205,7 @@ Date: 2026-09-05. Cumulative release based on 0.1.0rc1.
 
 Added AnthropicModel (native Messages), GoogleModel (native Gemini generateContent),
 XAIModel (Chat Completions compatible) and OllamaModel (native /api/chat).
-See [provider guide and capability matrix](docs/guides/PROVIDERS.md) and CHECK_RESULTS.md.
+See [provider guide and capability matrix](../guides/PROVIDERS.md) and ../verification/CHECK_RESULTS.md.
 HTTPX remains optional; install a single provider extra or `.[providers]`.
 
 All five expose generate and real incremental streaming (SSE or NDJSON), tools, normalized usage
@@ -279,7 +279,7 @@ The API key must already be configured. No live test was executed for this deliv
 ## Validation
 
 Run Ruff, format check, strict Mypy, pytest (coverage gate 90%), build and Twine. The archive contains
-CHECK_RESULTS.md with measured results and SHA256SUMS covering the complete source and dist tree.
+../verification/CHECK_RESULTS.md with measured results and SHA256SUMS covering the complete source and dist tree.
 Tests are locally executed on Python 3.12; other versions remain CI validation targets.
 
 ## Official references consulted

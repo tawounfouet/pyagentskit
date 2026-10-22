@@ -28,5 +28,5 @@ The complete automated suite is offline. Live tests are present but were not run
 explicit credentials/gates were configured. This release therefore qualifies mappings,
 validation, packaging and failure behavior—not any specific remote account/model combination.
 
-See `AUDIT_OPENROUTER_BETA1.md`, `OPENROUTER_RC1_QUALIFICATION.md`, ADR-0014 and
-`CHECK_RESULTS.md`.
+See `../audits/AUDIT_OPENROUTER_BETA1.md`, `../qualification/OPENROUTER_RC1_QUALIFICATION.md`, ADR-0014 and
+`../verification/CHECK_RESULTS.md`.

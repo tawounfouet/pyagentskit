@@ -57,4 +57,4 @@ request was made.
 - generation-stat follow-up and advanced router metadata;
 - retry/fallback coordination across runtime layers.
 
-See `OPENROUTER_QUALIFICATION.md`, `docs/guides/OPENROUTER.md` and `CHECK_RESULTS.md`.
+See `../qualification/OPENROUTER_QUALIFICATION.md`, `../guides/OPENROUTER.md` and `../verification/CHECK_RESULTS.md`.

@@ -12,5 +12,5 @@ The local run uses Python 3.12. GitHub Actions defines the supported Python 3.11
 matrix. Provider wire contracts use HTTP mocks. Live provider checks remain opt-in and the
 release gate makes no authenticated or billable request.
 
-Exact counts, coverage, benchmark values and hashes are recorded in CHECK_RESULTS.md and
+Exact counts, coverage, benchmark values and hashes are recorded in ../verification/CHECK_RESULTS.md and
 SHA256SUMS after the final run.

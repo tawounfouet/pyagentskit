@@ -1,6 +1,6 @@
 # Lot 10 API stability — PyAgentsKit 0.5.x
 
-The public names documented in `docs/guides/DURABLE_CHECKPOINTS_RECOVERY.md` are supported for the
+The public names documented in `../guides/DURABLE_CHECKPOINTS_RECOVERY.md` are supported for the
 `0.5.x` line. Checkpoint/effect documents expose `schema_version=1`; additions may be backward
 compatible, while field removal or semantic reinterpretation requires a migration and release note.
 

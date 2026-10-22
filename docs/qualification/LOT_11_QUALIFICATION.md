@@ -9,5 +9,5 @@ The release gate runs Ruff, formatting, strict Mypy, byte compilation, the full 
 the runtime benchmark, distribution build, Twine metadata validation, archive inspection,
 byte-for-byte rebuild comparison and wheel smoke tests. No live request is made.
 
-Final measured counts and hashes are recorded in `CHECK_RESULTS.md`, `BENCHMARK_RESULTS.md` and
+Final measured counts and hashes are recorded in `../verification/CHECK_RESULTS.md`, `../verification/BENCHMARK_RESULTS.md` and
 `SHA256SUMS` after the release-check.
