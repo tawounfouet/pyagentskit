@@ -41,10 +41,10 @@ from ...domain.lifecycle import (
     ApprovalScope,
     ApprovalStatus,
     EffectStatus,
-    RuntimeCapability,
     LeaseStatus,
     ReconciliationStatus,
     RunStatus,
+    RuntimeCapability,
 )
 from ...domain.shared import (
     AggregateVersion,
