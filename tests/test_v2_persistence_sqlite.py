@@ -56,15 +56,12 @@ class SQLitePersistenceTests(unittest.IsolatedAsyncioTestCase):
         connection = sqlite3.connect(self.path)
         try:
             version = connection.execute(
-                "SELECT version FROM v2_schema_migrations "
-                "WHERE component='persistence_v2'"
+                "SELECT version FROM v2_schema_migrations WHERE component='persistence_v2'"
             ).fetchone()
             self.assertEqual(version, (1,))
             indexes = {
                 row[0]
-                for row in connection.execute(
-                    "SELECT name FROM sqlite_master WHERE type='index'"
-                )
+                for row in connection.execute("SELECT name FROM sqlite_master WHERE type='index'")
             }
             self.assertIn("ux_v2_effect_idempotency", indexes)
             self.assertIn("ux_v2_active_lease_resource", indexes)
@@ -105,9 +102,7 @@ class SQLitePersistenceTests(unittest.IsolatedAsyncioTestCase):
         await repository.close()
 
         reopened = SQLiteEffectRepository(self.path)
-        duplicate = await reopened.reserve(
-            Effect(idempotency_key=key, fingerprint=fingerprint)
-        )
+        duplicate = await reopened.reserve(Effect(idempotency_key=key, fingerprint=fingerprint))
         self.assertFalse(duplicate.created)
         self.assertEqual(duplicate.effect.id, effect.id)
 
