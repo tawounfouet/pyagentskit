@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from ..domain.effects import Effect, ReconciliationCase, ReconciliationEvidence, ReconciliationObservation
+from ..domain.effects import (
+    Effect,
+    ReconciliationCase,
+    ReconciliationEvidence,
+    ReconciliationObservation,
+)
 from ..domain.shared import AggregateVersion, EffectId
 
 
