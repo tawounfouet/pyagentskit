@@ -929,7 +929,7 @@ class SQLiteInboxStore(_SQLiteRepository):
                 if str(row["digest"]) != record.digest:
                     raise InboxDigestConflictError(
                         "external event id was reused with a different digest"
-                    )
+                    ) from None
                 return False
 
         return await self._db.call(operation)
