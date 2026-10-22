@@ -71,7 +71,7 @@ class SQLiteSessionRepository(_SQLiteRepository):
                     ),
                 )
             except sqlite3.IntegrityError as exc:
-                raise DuplicateAggregateError(f"session {session.id} already exists") from exc from exc
+                raise DuplicateAggregateError(f"session {session.id} already exists") from exc
 
         await self._db.call(operation)
 
@@ -269,7 +269,7 @@ class SQLiteWorkerRepository(_SQLiteRepository):
                     ),
                 )
             except sqlite3.IntegrityError as exc:
-                raise DuplicateAggregateError(f"worker {worker.id} already exists") from exc from exc
+                raise DuplicateAggregateError(f"worker {worker.id} already exists") from exc
 
         await self._db.call(operation)
 
@@ -323,7 +323,7 @@ class SQLiteArtifactRepository(_SQLiteRepository):
                     ),
                 )
             except sqlite3.IntegrityError as exc:
-                raise DuplicateAggregateError(f"artifact {artifact.id} already exists") from exc from exc
+                raise DuplicateAggregateError(f"artifact {artifact.id} already exists") from exc
 
         await self._db.call(operation)
 
