@@ -58,8 +58,9 @@ class RuntimeRecoveryExecutor:
         plan.assert_current_ownership(context.ownership, now=context.now)
         missing = plan.required_capabilities - adapter.descriptor.capabilities
         if missing:
+            missing_names = sorted(item.value for item in missing)
             raise RuntimeCapabilityError(
-                f"runtime is missing recovery capabilities: {sorted(item.value for item in missing)}"
+                f"runtime is missing recovery capabilities: {missing_names}"
             )
 
         if plan.next_action is NextAction.RESUME_RUNTIME:
