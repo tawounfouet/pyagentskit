@@ -335,7 +335,9 @@ class PostgresV2PersistenceTests(unittest.IsolatedAsyncioTestCase):
                 }
             ]
         )
-        self.connection.fetchrow_results.append({"attempt_count": 1, "claimed_at": now})
+        self.connection.fetchrow_results.append(
+            {"attempt_count": 1, "claimed_at": now}
+        )
         claimed = await outbox.claim_batch(worker_id="publisher")
         self.assertEqual(claimed[0].status, OutboxStatus.CLAIMED)
         self.assertEqual(claimed[0].attempt_count, 1)
@@ -357,7 +359,9 @@ class PostgresV2PersistenceTests(unittest.IsolatedAsyncioTestCase):
             external_event_id="delivery-42",
             digest="a" * 64,
         )
-        self.connection.fetchrow_results.append({"external_event_id": record.external_event_id})
+        self.connection.fetchrow_results.append(
+            {"external_event_id": record.external_event_id}
+        )
         self.assertTrue(await inbox.reserve(record))
 
         self.connection.fetchrow_results.append(
