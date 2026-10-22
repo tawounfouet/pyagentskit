@@ -7,10 +7,11 @@ back of an optimistic-concurrency boundary.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from datetime import datetime
 from enum import StrEnum
-from typing import Mapping, TypeVar
+from typing import TypeVar
 
 from .effects import Effect as Effect
 from .effects import ReconciliationCase as ReconciliationCase
@@ -182,7 +183,13 @@ class MemoryEntry:
     def __post_init__(self) -> None:
         if not self.key:
             raise ValueError("memory key is required")
-        if self.scope in {MemoryScope.SESSION, MemoryScope.AGENT, MemoryScope.WORKSPACE, MemoryScope.CUSTOM} and not self.scope_id:
+        scoped = {
+            MemoryScope.SESSION,
+            MemoryScope.AGENT,
+            MemoryScope.WORKSPACE,
+            MemoryScope.CUSTOM,
+        }
+        if self.scope in scoped and not self.scope_id:
             raise ValueError(f"{self.scope.value} memory requires a scope_id")
 
     def revise(self, value: Mapping[str, object]) -> MemoryEntry:
