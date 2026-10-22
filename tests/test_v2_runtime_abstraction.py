@@ -214,6 +214,36 @@ class RuntimeNegotiationTests(unittest.TestCase):
         self.assertEqual(first.selected_runtime_id, second.selected_runtime_id)
         self.assertIn(first.selected_runtime_id or "", first.reason)
 
+    def test_preferred_capability_ranks_before_qualification(self) -> None:
+        preferred = StubRuntime(
+            descriptor(
+                "test/preferred@1",
+                capabilities=frozenset(
+                    {RuntimeCapability.START, RuntimeCapability.STRUCTURED_OUTPUT}
+                ),
+                qualification=RuntimeQualificationLevel.L1,
+            )
+        )
+        highly_qualified = StubRuntime(
+            descriptor(
+                "test/qualified@1",
+                capabilities=frozenset({RuntimeCapability.START}),
+                qualification=RuntimeQualificationLevel.L4,
+            )
+        )
+        result = CapabilityNegotiator().negotiate(
+            RuntimeRequirements(
+                required_capabilities=frozenset({RuntimeCapability.START}),
+                preferred_capabilities=frozenset({RuntimeCapability.STRUCTURED_OUTPUT}),
+            ),
+            (
+                RuntimeCandidate(highly_qualified.descriptor, highly_qualified),
+                RuntimeCandidate(preferred.descriptor, preferred),
+            ),
+        )
+
+        self.assertEqual(result.selected_runtime_id, "test/preferred@1")
+
     def test_operator_preference_is_generic_and_does_not_privilege_native(self) -> None:
         first = StubRuntime(
             descriptor(
