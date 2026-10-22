@@ -123,9 +123,7 @@ class PersistenceCodecFailurePathTests(unittest.TestCase):
             resolution_detail="waiting for finance",
             metadata=(("ticket", "INC-42"),),
         )
-        restored_case = reconciliation_case_from_document(
-            reconciliation_case_to_document(case)
-        )
+        restored_case = reconciliation_case_from_document(reconciliation_case_to_document(case))
         self.assertEqual(restored_case, case)
         self.assertEqual(restored_case.resolution, "operator_pending")
 
@@ -151,9 +149,7 @@ class PersistenceCodecFailurePathTests(unittest.TestCase):
             aggregate_type="Effect",
             aggregate_id="effect_42",
         )
-        restored = integration_event_from_document(
-            integration_event_to_document(event)
-        )
+        restored = integration_event_from_document(integration_event_to_document(event))
         self.assertEqual(restored, event)
 
 
