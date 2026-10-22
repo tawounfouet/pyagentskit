@@ -97,6 +97,7 @@ CREATE TABLE IF NOT EXISTS v2_outbox_events (
     attempt_count INTEGER NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
     next_attempt_at TEXT,
     claimed_by TEXT,
+    claimed_at TEXT,
     published_at TEXT,
     last_error TEXT,
     occurred_at TEXT NOT NULL,
