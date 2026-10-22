@@ -134,10 +134,10 @@ class CapabilityNegotiator:
             preferred_matches = len(descriptor.capabilities & requirements.preferred_capabilities)
             return (
                 descriptor.side_effect_control_level if selection_policy.prefer_full_control else 0,
+                preferred_matches,
                 descriptor.qualification_level
                 if selection_policy.prefer_highest_qualification
                 else 0,
-                preferred_matches,
                 preferred_index,
             )
 
