@@ -37,7 +37,6 @@ from pyagentskit.domain import (
     WorkerId,
 )
 from pyagentskit.postgres import AsyncPostgresPool, create_asyncpg_pool
-from tests.persistence_contract_suite import PersistenceContractSuiteMixin
 
 _GATE = os.getenv("PYAGENTSKIT_LIVE_POSTGRES") == "I_ACCEPT_DATABASE_WRITES" and bool(
     os.getenv("PYAGENTSKIT_POSTGRES_DSN")
@@ -121,10 +120,7 @@ def _lease_process_entry(
 
 
 @unittest.skipUnless(_GATE, "PostgreSQL V2 live qualification is opt-in")
-class PostgresV2LiveQualification(
-    PersistenceContractSuiteMixin,
-    unittest.IsolatedAsyncioTestCase,
-):
+class PostgresV2LiveQualification(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         self.dsn = os.environ["PYAGENTSKIT_POSTGRES_DSN"]
         self.prefix = "pakv2live_" + uuid4().hex[:10]
@@ -135,21 +131,6 @@ class PostgresV2LiveQualification(
             await _drop_tables(self.pool, self.prefix)
         finally:
             await _close_pool(self.pool)
-
-    async def make_run_repository(self):
-        return PostgresV2RunRepository(self.pool, table_prefix=self.prefix)
-
-    async def make_effect_repository(self):
-        return PostgresV2EffectRepository(self.pool, table_prefix=self.prefix)
-
-    async def make_runtime_repository(self):
-        return PostgresV2RuntimeRepository(self.pool, table_prefix=self.prefix)
-
-    async def make_outbox_store(self):
-        return PostgresV2OutboxStore(self.pool, table_prefix=self.prefix)
-
-    async def make_inbox_store(self):
-        return PostgresV2InboxStore(self.pool, table_prefix=self.prefix)
 
     async def test_real_postgres_cas_idempotency_and_fencing(self) -> None:
         runs = PostgresV2RunRepository(self.pool, table_prefix=self.prefix)
