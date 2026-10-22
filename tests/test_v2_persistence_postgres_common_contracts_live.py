@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import unittest
+from importlib.resources import files
 from uuid import uuid4
 
 from pyagentskit.adapters.persistence import (
@@ -24,6 +25,7 @@ from pyagentskit.adapters.persistence import (
     PostgresV2UnitOfWork,
     PostgresV2WorkerRepository,
 )
+from pyagentskit.domain import Session
 from pyagentskit.postgres import create_asyncpg_pool
 from tests.persistence_contract_suite import PersistenceContractSuiteMixin
 
@@ -69,6 +71,43 @@ class PostgresPersistenceCommonContracts(
             for suffix in _SUFFIXES:
                 await connection.execute(f"DROP TABLE IF EXISTS {self.prefix}_v2_{suffix} CASCADE")
         await self.pool.close()
+
+    async def test_postgres_schema_migrates_incrementally_from_v1_to_v2(self) -> None:
+        migration_v1 = (
+            files("pyagentskit.adapters.persistence.migrations.postgres")
+            .joinpath("0001_v2_core.sql")
+            .read_text(encoding="utf-8")
+            .replace("__PFX__", self.prefix)
+        )
+        async with self.pool.acquire() as connection:
+            await connection.execute(migration_v1)
+            before = await connection.fetchval(
+                f"SELECT version FROM {self.prefix}_v2_schema_migrations "
+                "WHERE component='persistence_v2'"
+            )
+            self.assertEqual(before, 1)
+
+        sessions = PostgresV2SessionRepository(
+            self.pool,
+            table_prefix=self.prefix,
+        )
+        session = Session()
+        await sessions.add(session)
+
+        async with self.pool.acquire() as connection:
+            after = await connection.fetchval(
+                f"SELECT version FROM {self.prefix}_v2_schema_migrations "
+                "WHERE component='persistence_v2'"
+            )
+            self.assertEqual(after, 2)
+            table_name = await connection.fetchval(
+                "SELECT to_regclass($1)::text",
+                f"{self.prefix}_v2_runtime_invocations",
+            )
+            self.assertEqual(
+                table_name,
+                f"{self.prefix}_v2_runtime_invocations",
+            )
 
     async def make_run_repository(self):
         return PostgresV2RunRepository(self.pool, table_prefix=self.prefix)
