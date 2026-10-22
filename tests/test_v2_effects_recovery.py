@@ -31,6 +31,7 @@ from pyagentskit.domain import (
     NextAction,
     OwnershipContext,
     ReconciliationCase,
+    ReconciliationError,
     ReconciliationEvidence,
     ReconciliationObservation,
     ReconciliationResolution,
