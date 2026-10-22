@@ -5,6 +5,7 @@ from .runtime import (
     CapabilityNegotiator,
     InMemoryRuntimeRegistry,
     NegotiationResult,
+    RuntimeBindingPolicy,
     RuntimeCandidate,
     RuntimeRegistry,
 )
@@ -14,6 +15,7 @@ __all__ = [
     "CapabilityNegotiator",
     "InMemoryRuntimeRegistry",
     "NegotiationResult",
+    "RuntimeBindingPolicy",
     "RuntimeCandidate",
     "RuntimeRegistry",
 ]
