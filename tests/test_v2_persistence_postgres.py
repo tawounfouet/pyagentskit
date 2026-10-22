@@ -2,21 +2,38 @@ from __future__ import annotations
 
 import unittest
 from collections.abc import Mapping, Sequence
+from dataclasses import replace
 from contextlib import AbstractAsyncContextManager
 from datetime import UTC, datetime
 from typing import Any
 
 from pyagentskit.adapters.persistence import (
     PostgresV2ApprovalRepository,
+    PostgresV2ArtifactRepository,
     PostgresV2AuditStore,
+    PostgresV2ConversationRepository,
     PostgresV2EffectRepository,
     PostgresV2InboxStore,
     PostgresV2LeaseRepository,
     PostgresV2MemoryRepository,
+    PostgresV2MessageRepository,
     PostgresV2OutboxStore,
     PostgresV2ReconciliationRepository,
     PostgresV2RunRepository,
+    PostgresV2SessionRepository,
     PostgresV2UnitOfWork,
+    PostgresV2WorkerRepository,
+)
+from pyagentskit.adapters.persistence._catalog_codec import (
+    artifact_to_document,
+    conversation_to_document,
+    message_to_document,
+    session_to_document,
+    worker_to_document,
+)
+from pyagentskit.adapters.persistence.postgres_catalog import (
+    bind_postgres_catalog,
+    make_postgres_catalog,
 )
 from pyagentskit.adapters.persistence._codec import (
     approval_to_document,
@@ -36,7 +53,10 @@ from pyagentskit.contracts import InboxRecord, InboxStatus, OutboxStatus
 from pyagentskit.domain import (
     Approval,
     ApprovalStatus,
+    Artifact,
     AuditEvent,
+    Conversation,
+    ConversationMessage,
     ConcurrencyConflictError,
     DuplicateAggregateError,
     Effect,
@@ -53,7 +73,10 @@ from pyagentskit.domain import (
     ReconciliationEvidence,
     Run,
     RunStatus,
+    Session,
+    Worker,
     WorkerId,
+    WorkerStatus,
 )
 from pyagentskit.domain.errors import (
     PersistenceCorruptionError,
@@ -386,6 +409,104 @@ class PostgresV2PersistenceTests(unittest.IsolatedAsyncioTestCase):
             record.external_event_id,
             error="handler failure",
         )
+
+    async def test_catalog_repositories_cover_normal_roundtrip_paths(self) -> None:
+        sessions = PostgresV2SessionRepository(self.pool, table_prefix="pakcatalog")
+        session = Session()
+        revised_session = replace(session, version=session.version.next())
+        self.connection.fetchrow_results.extend(
+            [
+                {"id": str(session.id)},
+                {"id": str(session.id)},
+                self._row(session_to_document(revised_session)),
+            ]
+        )
+        await sessions.add(session)
+        await sessions.save(revised_session, expected_version=session.version)
+        self.assertEqual(await sessions.get(session.id), revised_session)
+
+        conversations = PostgresV2ConversationRepository(
+            self.pool,
+            table_prefix="pakcatalog",
+        )
+        conversation = Conversation(session_id=session.id)
+        message = ConversationMessage(actor="agent", content="persist me")
+        revised_conversation = conversation.append(message)
+        self.connection.fetchrow_results.extend(
+            [
+                {"id": str(conversation.id)},
+                {"id": str(conversation.id)},
+                self._row(conversation_to_document(revised_conversation)),
+            ]
+        )
+        self.connection.fetch_results.append(
+            [self._row(conversation_to_document(revised_conversation))]
+        )
+        await conversations.add(conversation)
+        await conversations.save(
+            revised_conversation,
+            expected_version=conversation.version,
+        )
+        self.assertEqual(
+            await conversations.get(conversation.id),
+            revised_conversation,
+        )
+        self.assertEqual(
+            await conversations.list_for_session(session.id),
+            (revised_conversation,),
+        )
+
+        messages = PostgresV2MessageRepository(self.pool, table_prefix="pakcatalog")
+        self.connection.fetchrow_results.extend(
+            [
+                {"id": str(message.id)},
+                self._row(message_to_document(message)),
+            ]
+        )
+        self.connection.fetch_results.append([self._row(message_to_document(message))])
+        await messages.append(conversation.id, message)
+        self.assertEqual(await messages.get(message.id), message)
+        self.assertEqual(
+            await messages.list_for_conversation(conversation.id),
+            (message,),
+        )
+
+        workers = PostgresV2WorkerRepository(self.pool, table_prefix="pakcatalog")
+        worker = Worker()
+        ready = worker.transition(WorkerStatus.READY)
+        self.connection.fetchrow_results.extend(
+            [
+                {"id": str(worker.id)},
+                {"id": str(worker.id)},
+                self._row(worker_to_document(ready)),
+            ]
+        )
+        await workers.add(worker)
+        await workers.save(ready, expected_version=worker.version)
+        self.assertEqual(await workers.get(worker.id), ready)
+
+        artifacts = PostgresV2ArtifactRepository(self.pool, table_prefix="pakcatalog")
+        artifact = Artifact(name="result.json")
+        self.connection.fetchrow_results.extend(
+            [
+                {"id": str(artifact.id)},
+                self._row(artifact_to_document(artifact)),
+            ]
+        )
+        await artifacts.add(artifact)
+        self.assertEqual(await artifacts.get(artifact.id), artifact)
+
+    async def test_catalog_factories_bind_all_catalog_repositories(self) -> None:
+        catalog = make_postgres_catalog(self.pool, table_prefix="pakfactory")
+        self.assertIsInstance(catalog["sessions"], PostgresV2SessionRepository)
+        self.assertIsInstance(catalog["conversations"], PostgresV2ConversationRepository)
+        self.assertIsInstance(catalog["messages"], PostgresV2MessageRepository)
+        self.assertIsInstance(catalog["workers"], PostgresV2WorkerRepository)
+        self.assertIsInstance(catalog["artifacts"], PostgresV2ArtifactRepository)
+
+        runs = PostgresV2RunRepository(self.pool, table_prefix="pakfactory")
+        bound = bind_postgres_catalog(runs._db)
+        self.assertEqual(set(bound), {"sessions", "conversations", "messages", "workers", "artifacts"})
 
     async def test_codec_corruption_and_non_serializable_payloads_fail_closed(self) -> None:
         with self.assertRaises(PersistenceError):
