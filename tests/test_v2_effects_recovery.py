@@ -355,9 +355,7 @@ class RecoveryPlannerTests(unittest.TestCase):
             checkpoint_available=True,
         )
 
-        plan = self.planner.plan(
-            recovery_context(effects=(unknown,), snapshot=snapshot)
-        )
+        plan = self.planner.plan(recovery_context(effects=(unknown,), snapshot=snapshot))
 
         self.assertEqual(plan.next_action, NextAction.RECONCILE_EFFECT)
 
