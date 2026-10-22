@@ -28,6 +28,7 @@ from .persistence import (
     PostgresV2OutboxStore,
     PostgresV2ReconciliationRepository,
     PostgresV2RunRepository,
+    PostgresV2RuntimeRepository,
     PostgresV2UnitOfWork,
     SQLiteApprovalRepository,
     SQLiteAuditStore,
@@ -38,6 +39,7 @@ from .persistence import (
     SQLiteOutboxStore,
     SQLiteReconciliationRepository,
     SQLiteRunRepository,
+    SQLiteRuntimeRepository,
     SQLiteUnitOfWork,
 )
 
@@ -70,6 +72,7 @@ __all__ = [
     "PostgresV2OutboxStore",
     "PostgresV2ReconciliationRepository",
     "PostgresV2RunRepository",
+    "PostgresV2RuntimeRepository",
     "PostgresV2UnitOfWork",
     "SQLiteApprovalRepository",
     "SQLiteAuditStore",
@@ -80,5 +83,6 @@ __all__ = [
     "SQLiteOutboxStore",
     "SQLiteReconciliationRepository",
     "SQLiteRunRepository",
+    "SQLiteRuntimeRepository",
     "SQLiteUnitOfWork",
 ]
