@@ -20,9 +20,7 @@ from pyagentskit.domain.errors import InvalidTransitionError, StaleFencingTokenE
 
 class V2DomainPropertyTests(unittest.TestCase):
     @given(
-        terminal=st.sampled_from(
-            (RunStatus.SUCCEEDED, RunStatus.FAILED, RunStatus.CANCELLED)
-        ),
+        terminal=st.sampled_from((RunStatus.SUCCEEDED, RunStatus.FAILED, RunStatus.CANCELLED)),
         target=st.sampled_from(tuple(RunStatus)),
     )
     def test_terminal_runs_never_transition(self, terminal: RunStatus, target: RunStatus) -> None:
