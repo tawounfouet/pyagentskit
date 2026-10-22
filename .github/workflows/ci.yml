@@ -49,6 +49,36 @@ jobs:
       - name: Unit, property, architecture and contract tests
         run: python -m pytest -p pytest_cov -q -rs
 
+  postgres-v2:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pyagentskit
+          POSTGRES_PASSWORD: pyagentskit
+          POSTGRES_DB: pyagentskit
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pyagentskit -d pyagentskit"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PYAGENTSKIT_LIVE_POSTGRES: I_ACCEPT_DATABASE_WRITES
+      PYAGENTSKIT_POSTGRES_DSN: postgresql://pyagentskit:pyagentskit@localhost:5432/pyagentskit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install PostgreSQL qualification dependencies
+        run: python -m pip install -e ".[dev,postgres]"
+      - name: Qualify V2 PostgreSQL persistence
+        run: python -m pytest -q tests/test_v2_postgres_live_qualification.py
+
   package:
     runs-on: ubuntu-latest
     steps:
