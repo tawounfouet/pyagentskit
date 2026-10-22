@@ -247,7 +247,10 @@ class V2DomainFoundationTests(unittest.TestCase):
                     continue
                 self.assertTrue(
                     all(
-                        not any(name == blocked or name.startswith(f"{blocked}.") for blocked in forbidden)
+                        not any(
+                            name == blocked or name.startswith(f"{blocked}.")
+                            for blocked in forbidden
+                        )
                         for name in imported
                     ),
                     f"{path}: forbidden imports {imported & forbidden}",
