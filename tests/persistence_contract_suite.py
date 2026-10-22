@@ -83,6 +83,9 @@ class PersistenceContractSuiteMixin:
     async def make_inbox_store(self):
         raise NotImplementedError
 
+    async def make_unit_of_work(self):
+        raise NotImplementedError
+
     async def test_contract_run_compare_and_swap_is_fail_closed(self) -> None:
         repository = await self.make_run_repository()
         run = Run()
@@ -341,6 +344,50 @@ class PersistenceContractSuiteMixin:
 
         await outbox.mark_published(event.event_id)
         self.assertEqual(await outbox.claim_batch(worker_id="publisher-c"), ())
+
+    async def test_contract_unit_of_work_rolls_back_catalog_and_outbox_together(self) -> None:
+        uow = await self.make_unit_of_work()
+        session = Session()
+        conversation = Conversation(session_id=session.id)
+        artifact = Artifact(name="transactional.txt")
+        event = IntegrationEvent(
+            name="conversation.created",
+            aggregate_type="Conversation",
+            aggregate_id=str(conversation.id),
+        )
+
+        async with uow:
+            await uow.sessions.add(session)
+            await uow.conversations.add(conversation)
+            await uow.artifacts.add(artifact)
+            await uow.outbox.append(event)
+
+        self.assertIsNone(await uow.sessions.get(session.id))
+        self.assertIsNone(await uow.artifacts.get(artifact.id))
+        self.assertEqual(await uow.outbox.claim_batch(worker_id="publisher"), ())
+
+    async def test_contract_unit_of_work_commits_catalog_and_outbox_together(self) -> None:
+        uow = await self.make_unit_of_work()
+        session = Session()
+        conversation = Conversation(session_id=session.id)
+        artifact = Artifact(name="committed.txt")
+        event = IntegrationEvent(
+            name="conversation.created",
+            aggregate_type="Conversation",
+            aggregate_id=str(conversation.id),
+        )
+
+        async with uow:
+            await uow.sessions.add(session)
+            await uow.conversations.add(conversation)
+            await uow.artifacts.add(artifact)
+            await uow.outbox.append(event)
+            await uow.commit()
+
+        self.assertEqual(await uow.sessions.get(session.id), session)
+        self.assertEqual(await uow.artifacts.get(artifact.id), artifact)
+        claimed = await uow.outbox.claim_batch(worker_id="publisher")
+        self.assertEqual(claimed[0].event.event_id, event.event_id)
 
     async def test_contract_inbox_dedup_is_distinct_from_effect_idempotency(self) -> None:
         inbox = await self.make_inbox_store()
