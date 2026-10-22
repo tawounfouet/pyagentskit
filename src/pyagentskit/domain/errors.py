@@ -39,3 +39,15 @@ class RuntimeAdapterError(DomainError):
 
 class RuntimeCapabilityError(RuntimeAdapterError):
     """Raised when an adapter operation is not contractually supported."""
+
+
+class IdempotencyConflictError(DomainError):
+    """Raised when one idempotency identity is reused for another logical intent."""
+
+
+class StaleRecoveryPlanError(DomainError):
+    """Raised when a RecoveryPlan is executed after its assumptions became stale."""
+
+
+class ReconciliationError(DomainError):
+    """Raised when an Effect cannot be reconciled safely."""
