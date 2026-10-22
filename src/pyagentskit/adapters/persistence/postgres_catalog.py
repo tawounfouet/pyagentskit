@@ -40,9 +40,7 @@ def _require_increment(
     expected_version: AggregateVersion,
 ) -> None:
     if new_version != expected_version.next():
-        raise ConcurrencyConflictError(
-            "saved aggregate version must advance by exactly one"
-        )
+        raise ConcurrencyConflictError("saved aggregate version must advance by exactly one")
 
 
 class PostgresV2SessionRepository(_PostgresRepository):
@@ -54,11 +52,7 @@ class PostgresV2SessionRepository(_PostgresRepository):
                 f"SELECT payload_json FROM {table} WHERE id=$1",
                 str(session_id),
             )
-            return (
-                None
-                if row is None
-                else session_from_document(loads(str(row["payload_json"])))
-            )
+            return None if row is None else session_from_document(loads(str(row["payload_json"])))
 
         return await self._db.call(operation)
 
@@ -78,9 +72,7 @@ class PostgresV2SessionRepository(_PostgresRepository):
                 dumps(session_to_document(session)),
             )
             if row is None:
-                raise DuplicateAggregateError(
-                    f"session {session.id} already exists"
-                )
+                raise DuplicateAggregateError(f"session {session.id} already exists")
 
         await self._db.call(operation)
 
@@ -104,9 +96,7 @@ class PostgresV2SessionRepository(_PostgresRepository):
                 expected_version.value,
             )
             if row is None:
-                raise ConcurrencyConflictError(
-                    f"stale or missing session {session.id}"
-                )
+                raise ConcurrencyConflictError(f"stale or missing session {session.id}")
 
         await self._db.call(operation)
 
@@ -126,9 +116,7 @@ class PostgresV2ConversationRepository(_PostgresRepository):
                 str(conversation_id),
             )
             return (
-                None
-                if row is None
-                else conversation_from_document(loads(str(row["payload_json"])))
+                None if row is None else conversation_from_document(loads(str(row["payload_json"])))
             )
 
         return await self._db.call(operation)
@@ -155,9 +143,7 @@ class PostgresV2ConversationRepository(_PostgresRepository):
                 str(conversation.id),
             )
             if duplicate is not None:
-                raise DuplicateAggregateError(
-                    f"conversation {conversation.id} already exists"
-                )
+                raise DuplicateAggregateError(f"conversation {conversation.id} already exists")
             raise ConcurrencyConflictError(
                 f"conversation parent session {conversation.session_id} is unavailable"
             )
@@ -184,9 +170,7 @@ class PostgresV2ConversationRepository(_PostgresRepository):
                 expected_version.value,
             )
             if row is None:
-                raise ConcurrencyConflictError(
-                    f"stale or missing conversation {conversation.id}"
-                )
+                raise ConcurrencyConflictError(f"stale or missing conversation {conversation.id}")
 
         await self._db.call(operation)
 
@@ -200,13 +184,11 @@ class PostgresV2ConversationRepository(_PostgresRepository):
             connection: AsyncPostgresConnection,
         ) -> tuple[Conversation, ...]:
             rows = await connection.fetch(
-                f"SELECT payload_json FROM {table} "
-                "WHERE session_id=$1 ORDER BY created_at,id",
+                f"SELECT payload_json FROM {table} WHERE session_id=$1 ORDER BY created_at,id",
                 str(session_id),
             )
             return tuple(
-                conversation_from_document(loads(str(row["payload_json"])))
-                for row in rows
+                conversation_from_document(loads(str(row["payload_json"]))) for row in rows
             )
 
         return await self._db.call(operation)
@@ -238,9 +220,7 @@ class PostgresV2MessageRepository(_PostgresRepository):
                 str(message.id),
             )
             if duplicate is not None:
-                raise DuplicateAggregateError(
-                    f"message {message.id} already exists"
-                )
+                raise DuplicateAggregateError(f"message {message.id} already exists")
             raise ConcurrencyConflictError(
                 f"message parent conversation {conversation_id} is unavailable"
             )
@@ -260,11 +240,7 @@ class PostgresV2MessageRepository(_PostgresRepository):
                 f"SELECT payload_json FROM {table} WHERE id=$1",
                 str(message_id),
             )
-            return (
-                None
-                if row is None
-                else message_from_document(loads(str(row["payload_json"])))
-            )
+            return None if row is None else message_from_document(loads(str(row["payload_json"])))
 
         return await self._db.call(operation)
 
@@ -278,13 +254,10 @@ class PostgresV2MessageRepository(_PostgresRepository):
             connection: AsyncPostgresConnection,
         ) -> tuple[ConversationMessage, ...]:
             rows = await connection.fetch(
-                f"SELECT payload_json FROM {table} "
-                "WHERE conversation_id=$1 ORDER BY created_at,id",
+                f"SELECT payload_json FROM {table} WHERE conversation_id=$1 ORDER BY created_at,id",
                 str(conversation_id),
             )
-            return tuple(
-                message_from_document(loads(str(row["payload_json"]))) for row in rows
-            )
+            return tuple(message_from_document(loads(str(row["payload_json"]))) for row in rows)
 
         return await self._db.call(operation)
 
@@ -298,11 +271,7 @@ class PostgresV2WorkerRepository(_PostgresRepository):
                 f"SELECT payload_json FROM {table} WHERE id=$1",
                 str(worker_id),
             )
-            return (
-                None
-                if row is None
-                else worker_from_document(loads(str(row["payload_json"])))
-            )
+            return None if row is None else worker_from_document(loads(str(row["payload_json"])))
 
         return await self._db.call(operation)
 
@@ -323,9 +292,7 @@ class PostgresV2WorkerRepository(_PostgresRepository):
                 dumps(worker_to_document(worker)),
             )
             if row is None:
-                raise DuplicateAggregateError(
-                    f"worker {worker.id} already exists"
-                )
+                raise DuplicateAggregateError(f"worker {worker.id} already exists")
 
         await self._db.call(operation)
 
@@ -350,9 +317,7 @@ class PostgresV2WorkerRepository(_PostgresRepository):
                 expected_version.value,
             )
             if row is None:
-                raise ConcurrencyConflictError(
-                    f"stale or missing worker {worker.id}"
-                )
+                raise ConcurrencyConflictError(f"stale or missing worker {worker.id}")
 
         await self._db.call(operation)
 
@@ -366,11 +331,7 @@ class PostgresV2ArtifactRepository(_PostgresRepository):
                 f"SELECT payload_json FROM {table} WHERE id=$1",
                 str(artifact_id),
             )
-            return (
-                None
-                if row is None
-                else artifact_from_document(loads(str(row["payload_json"])))
-            )
+            return None if row is None else artifact_from_document(loads(str(row["payload_json"])))
 
         return await self._db.call(operation)
 
@@ -387,9 +348,7 @@ class PostgresV2ArtifactRepository(_PostgresRepository):
                 dumps(artifact_to_document(artifact)),
             )
             if row is None:
-                raise DuplicateAggregateError(
-                    f"artifact {artifact.id} already exists"
-                )
+                raise DuplicateAggregateError(f"artifact {artifact.id} already exists")
 
         await self._db.call(operation)
 
