@@ -755,6 +755,7 @@ class MemoryUnitOfWork:
 
 
 __all__ = [
+    "InMemoryMemoryRepository",
     "MemoryApprovalRepository",
     "MemoryArtifactRepository",
     "MemoryAuditStore",
@@ -763,7 +764,6 @@ __all__ = [
     "MemoryEffectRepository",
     "MemoryInboxStore",
     "MemoryLeaseRepository",
-    "InMemoryMemoryRepository",
     "MemoryMessageRepository",
     "MemoryOutboxStore",
     "MemoryReconciliationRepository",
