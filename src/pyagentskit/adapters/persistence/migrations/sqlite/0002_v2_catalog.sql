@@ -63,8 +63,11 @@ CREATE TABLE IF NOT EXISTS v2_runtime_invocations (
     id TEXT PRIMARY KEY,
     run_id TEXT NOT NULL,
     binding_id TEXT NOT NULL,
+    runtime_id TEXT,
     status TEXT NOT NULL,
     version INTEGER NOT NULL CHECK (version >= 0),
+    started_at TEXT,
+    completed_at TEXT,
     payload_json TEXT NOT NULL,
     FOREIGN KEY (run_id) REFERENCES v2_runs(id) ON DELETE RESTRICT,
     FOREIGN KEY (binding_id) REFERENCES v2_runtime_bindings(id) ON DELETE RESTRICT
