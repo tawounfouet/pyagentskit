@@ -68,13 +68,13 @@ jobs:
         run: |
           python -m venv /tmp/pyagentskit-clean
           /tmp/pyagentskit-clean/bin/python -m pip install --upgrade pip
-          /tmp/pyagentskit-clean/bin/pip install dist/pyagentskit-2.0.0a2-py3-none-any.whl
-          /tmp/pyagentskit-clean/bin/python -c "import pyagentskit; assert pyagentskit.__version__ == '2.0.0a2'"
+          /tmp/pyagentskit-clean/bin/pip install dist/pyagentskit-2.0.0a3-py3-none-any.whl
+          /tmp/pyagentskit-clean/bin/python -c "import pyagentskit; assert pyagentskit.__version__ == '2.0.0a3'"
           /tmp/pyagentskit-clean/bin/python -c "from pyagentskit.domain import OwnershipContext, MessageRecipient; assert OwnershipContext and MessageRecipient"
           /tmp/pyagentskit-clean/bin/pip check
       - name: Upload distributions
         uses: actions/upload-artifact@v4
         with:
-          name: pyagentskit-2.0.0a2-dist
+          name: pyagentskit-2.0.0a3-dist
           path: dist/*
           if-no-files-found: error
