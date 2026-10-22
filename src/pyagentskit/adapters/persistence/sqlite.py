@@ -12,7 +12,6 @@ import asyncio
 import sqlite3
 from collections.abc import Callable
 from contextvars import ContextVar, Token
-from dataclasses import replace
 from datetime import UTC, datetime
 from importlib.resources import files
 from pathlib import Path
@@ -37,7 +36,7 @@ from ...domain.errors import (
     PersistenceError,
 )
 from ...domain.events import IntegrationEvent
-from ...domain.lifecycle import ApprovalStatus, LeaseStatus, RunStatus
+from ...domain.lifecycle import ApprovalStatus, RunStatus
 from ...domain.shared import (
     AggregateVersion,
     ApprovalId,
