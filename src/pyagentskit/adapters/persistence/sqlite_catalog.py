@@ -41,9 +41,7 @@ def _require_increment(
     expected_version: AggregateVersion,
 ) -> None:
     if new_version != expected_version.next():
-        raise ConcurrencyConflictError(
-            "saved aggregate version must advance by exactly one"
-        )
+        raise ConcurrencyConflictError("saved aggregate version must advance by exactly one")
 
 
 class SQLiteSessionRepository(_SQLiteRepository):
@@ -53,11 +51,7 @@ class SQLiteSessionRepository(_SQLiteRepository):
                 "SELECT payload_json FROM v2_sessions WHERE id=?",
                 (str(session_id),),
             ).fetchone()
-            return (
-                None
-                if row is None
-                else session_from_document(loads(row["payload_json"]))
-            )
+            return None if row is None else session_from_document(loads(row["payload_json"]))
 
         return await self._db.call(operation)
 
@@ -77,9 +71,7 @@ class SQLiteSessionRepository(_SQLiteRepository):
                     ),
                 )
             except sqlite3.IntegrityError as exc:
-                raise DuplicateAggregateError(
-                    f"session {session.id} already exists"
-                ) from exc
+                raise DuplicateAggregateError(f"session {session.id} already exists") from exc from exc
 
         await self._db.call(operation)
 
@@ -104,9 +96,7 @@ class SQLiteSessionRepository(_SQLiteRepository):
                 ),
             )
             if cursor.rowcount != 1:
-                raise ConcurrencyConflictError(
-                    f"stale or missing session {session.id}"
-                )
+                raise ConcurrencyConflictError(f"stale or missing session {session.id}")
 
         await self._db.call(operation)
 
@@ -121,11 +111,7 @@ class SQLiteConversationRepository(_SQLiteRepository):
                 "SELECT payload_json FROM v2_conversations WHERE id=?",
                 (str(conversation_id),),
             ).fetchone()
-            return (
-                None
-                if row is None
-                else conversation_from_document(loads(row["payload_json"]))
-            )
+            return None if row is None else conversation_from_document(loads(row["payload_json"]))
 
         return await self._db.call(operation)
 
@@ -178,9 +164,7 @@ class SQLiteConversationRepository(_SQLiteRepository):
                 ),
             )
             if cursor.rowcount != 1:
-                raise ConcurrencyConflictError(
-                    f"stale or missing conversation {conversation.id}"
-                )
+                raise ConcurrencyConflictError(f"stale or missing conversation {conversation.id}")
 
         await self._db.call(operation)
 
@@ -194,10 +178,7 @@ class SQLiteConversationRepository(_SQLiteRepository):
                 "WHERE session_id=? ORDER BY created_at, id",
                 (str(session_id),),
             ).fetchall()
-            return tuple(
-                conversation_from_document(loads(row["payload_json"]))
-                for row in rows
-            )
+            return tuple(conversation_from_document(loads(row["payload_json"])) for row in rows)
 
         return await self._db.call(operation)
 
@@ -227,9 +208,7 @@ class SQLiteMessageRepository(_SQLiteRepository):
                     (str(message.id),),
                 ).fetchone()
                 if existing is not None:
-                    raise DuplicateAggregateError(
-                        f"message {message.id} already exists"
-                    ) from exc
+                    raise DuplicateAggregateError(f"message {message.id} already exists") from exc
                 raise
 
         await self._db.call(operation)
@@ -243,11 +222,7 @@ class SQLiteMessageRepository(_SQLiteRepository):
                 "SELECT payload_json FROM v2_messages WHERE id=?",
                 (str(message_id),),
             ).fetchone()
-            return (
-                None
-                if row is None
-                else message_from_document(loads(row["payload_json"]))
-            )
+            return None if row is None else message_from_document(loads(row["payload_json"]))
 
         return await self._db.call(operation)
 
@@ -261,9 +236,7 @@ class SQLiteMessageRepository(_SQLiteRepository):
                 "WHERE conversation_id=? ORDER BY created_at, id",
                 (str(conversation_id),),
             ).fetchall()
-            return tuple(
-                message_from_document(loads(row["payload_json"])) for row in rows
-            )
+            return tuple(message_from_document(loads(row["payload_json"])) for row in rows)
 
         return await self._db.call(operation)
 
@@ -275,11 +248,7 @@ class SQLiteWorkerRepository(_SQLiteRepository):
                 "SELECT payload_json FROM v2_workers WHERE id=?",
                 (str(worker_id),),
             ).fetchone()
-            return (
-                None
-                if row is None
-                else worker_from_document(loads(row["payload_json"]))
-            )
+            return None if row is None else worker_from_document(loads(row["payload_json"]))
 
         return await self._db.call(operation)
 
@@ -300,9 +269,7 @@ class SQLiteWorkerRepository(_SQLiteRepository):
                     ),
                 )
             except sqlite3.IntegrityError as exc:
-                raise DuplicateAggregateError(
-                    f"worker {worker.id} already exists"
-                ) from exc
+                raise DuplicateAggregateError(f"worker {worker.id} already exists") from exc from exc
 
         await self._db.call(operation)
 
@@ -328,9 +295,7 @@ class SQLiteWorkerRepository(_SQLiteRepository):
                 ),
             )
             if cursor.rowcount != 1:
-                raise ConcurrencyConflictError(
-                    f"stale or missing worker {worker.id}"
-                )
+                raise ConcurrencyConflictError(f"stale or missing worker {worker.id}")
 
         await self._db.call(operation)
 
@@ -342,11 +307,7 @@ class SQLiteArtifactRepository(_SQLiteRepository):
                 "SELECT payload_json FROM v2_artifacts WHERE id=?",
                 (str(artifact_id),),
             ).fetchone()
-            return (
-                None
-                if row is None
-                else artifact_from_document(loads(row["payload_json"]))
-            )
+            return None if row is None else artifact_from_document(loads(row["payload_json"]))
 
         return await self._db.call(operation)
 
@@ -354,8 +315,7 @@ class SQLiteArtifactRepository(_SQLiteRepository):
         def operation() -> None:
             try:
                 self._db.connection.execute(
-                    "INSERT INTO v2_artifacts(id, name, payload_json) "
-                    "VALUES (?, ?, ?)",
+                    "INSERT INTO v2_artifacts(id, name, payload_json) VALUES (?, ?, ?)",
                     (
                         str(artifact.id),
                         artifact.name,
@@ -363,9 +323,7 @@ class SQLiteArtifactRepository(_SQLiteRepository):
                     ),
                 )
             except sqlite3.IntegrityError as exc:
-                raise DuplicateAggregateError(
-                    f"artifact {artifact.id} already exists"
-                ) from exc
+                raise DuplicateAggregateError(f"artifact {artifact.id} already exists") from exc from exc
 
         await self._db.call(operation)
 
