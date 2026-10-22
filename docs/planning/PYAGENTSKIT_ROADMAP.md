@@ -152,7 +152,7 @@ Detailed milestone specifications:
 
 # 2.0.0a1 — Domain Foundations
 
-Status: **Next**
+Status: **Released**
 
 Goal:
 
@@ -308,7 +308,7 @@ Cancellation != rollback
 
 # 2.0.0a2 — Runtime Abstraction
 
-Status: **Planned**
+Status: **Released**
 
 Goal:
 
@@ -402,7 +402,7 @@ Reuse where valid:
 
 # 2.0.0a3 — Effects & Recovery Core
 
-Status: **Planned**
+Status: **Next**
 
 Goal:
 

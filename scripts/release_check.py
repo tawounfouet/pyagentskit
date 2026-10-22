@@ -15,15 +15,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / "release-dist"
-EXPECTED_VERSION = "2.0.0a1"
+EXPECTED_VERSION = "2.0.0a2"
 REQUIRED_SDIST_FILES = {
     "README.md",
     "CHANGELOG.md",
     "docs/specs/MANIFEST.md",
     "docs/planning/49_PYAGENTSKIT_V2_IMPLEMENTATION_NEXT_STEPS.md",
     "docs/planning/PYAGENTSKIT_ROADMAP.md",
-    "docs/releases/V2_0_0A1_RELEASE_NOTES.md",
-    "docs/specs/milestones/50_PYAGENTSKIT_MILESTONE_2_0_0A1_DOMAIN_FOUNDATIONS_SPEC.md",
+    "docs/releases/V2_0_0A2_RELEASE_NOTES.md",
+    "docs/specs/milestones/51_PYAGENTSKIT_MILESTONE_2_0_0A2_RUNTIME_ABSTRACTION_SPEC.md",
 }
 
 

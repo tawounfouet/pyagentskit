@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.0.0a2] - 2026-10-22
+
+### Added
+
+- Added the provider-neutral `AgentRuntimeAdapter` contract for start, resume, cancel, status,
+  events, checkpoint and close operations.
+- Added runtime descriptors, opaque handles, normalized requests/events, qualification levels and
+  explicit side-effect control levels.
+- Added deterministic capability negotiation with hard required-capability, exact-runtime,
+  version, platform and safety checks.
+- Added process-local runtime registry with collision detection and stable descriptor ordering.
+- Added the `NativeRuntimeEngine`/`NativeRuntimeAdapter` boundary over the V1 `Runner`.
+- Added contract tests for native runtime behavior, capability mismatch, exact selection and
+  durable binding/invocation separation.
+
+### Not Included
+
+- External runtime connectors, V2 persistence, complete recovery orchestration and plugin
+  discovery remain future milestones.
+
 ## [2.0.0a1] - 2026-10-22
 
 ### Added

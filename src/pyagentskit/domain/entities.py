@@ -25,6 +25,12 @@ from .lifecycle import (
     RuntimeCapability,
     WorkerStatus,
 )
+from .runtime import (
+    RuntimeHandle,
+    RuntimeQualificationLevel,
+    RuntimeStatus,
+    SideEffectControlLevel,
+)
 from .shared import (
     ActorId,
     AggregateVersion,
@@ -235,10 +241,37 @@ class RuntimeBinding:
     id: RuntimeBindingId = field(default_factory=lambda: RuntimeBindingId.new("binding"))
     runtime_name: str = ""
     capabilities: frozenset[RuntimeCapability] = frozenset()
+    run_id: RunId | None = None
+    runtime_id: str | None = None
+    runtime_family: str | None = None
+    adapter_version: str | None = None
+    runtime_version: str | None = None
+    contract_version: str | None = None
+    required_capabilities: frozenset[RuntimeCapability] = frozenset()
+    selected_capabilities: frozenset[RuntimeCapability] | None = None
+    side_effect_control_level: SideEffectControlLevel = SideEffectControlLevel.OPAQUE
+    qualification_level: RuntimeQualificationLevel = RuntimeQualificationLevel.L0
+    configuration_ref: str | None = None
+    selection_reason: str = ""
+    bound_at: datetime = field(default_factory=utc_now)
 
     def __post_init__(self) -> None:
-        if not self.runtime_name:
-            raise ValueError("runtime name is required")
+        if not self.runtime_name and not self.runtime_id:
+            raise ValueError("runtime name or runtime id is required")
+
+    @property
+    def resolved_runtime_id(self) -> str:
+        """Return the canonical id when available, otherwise the legacy name."""
+
+        return self.runtime_id or self.runtime_name
+
+    @property
+    def resolved_capabilities(self) -> frozenset[RuntimeCapability]:
+        """Return the negotiated capability snapshot."""
+
+        return (
+            self.capabilities if self.selected_capabilities is None else self.selected_capabilities
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -247,6 +280,15 @@ class RuntimeInvocation:
     run_id: RunId = field(default_factory=lambda: RunId.new("run"))
     binding_id: RuntimeBindingId = field(default_factory=lambda: RuntimeBindingId.new("binding"))
     input: str = ""
+    runtime_id: str | None = None
+    status: RuntimeStatus = RuntimeStatus.CREATED
+    handle: RuntimeHandle | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    parent_invocation_id: RuntimeInvocationId | None = None
+    restart_reason: str | None = None
+    checkpoint_origin: str | None = None
+    version: AggregateVersion = field(default_factory=AggregateVersion)
 
     def __post_init__(self) -> None:
         if not self.input:

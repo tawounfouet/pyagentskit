@@ -62,6 +62,19 @@ class WorkerStatus(StrEnum):
 
 
 class RuntimeCapability(StrEnum):
+    START = "start"
+    CANCEL = "cancel"
+    STATUS = "status"
+    EVENT_STREAM = "event_stream"
+    NATIVE_CHECKPOINT = "native_checkpoint"
+    TOOL_INTERCEPTION = "tool_interception"
+    MESSAGE_STREAM = "message_stream"
+    HUMAN_APPROVAL_HOOK = "human_approval_hook"
+    SUBAGENTS = "subagents"
+    SESSION_RESUME = "session_resume"
+    WORKSPACE = "workspace"
+    COMMAND_EXECUTION = "command_execution"
+    FILE_EDITING = "file_editing"
     INVOKE = "invoke"
     STREAM = "stream"
     TOOLS = "tools"
