@@ -151,17 +151,11 @@ def effect_to_document(effect: Effect) -> dict[str, object]:
                 "key": effect.external_reference.key,
             }
         ),
-        "fencing_token": (
-            None if effect.fencing_token is None else effect.fencing_token.value
-        ),
+        "fencing_token": (None if effect.fencing_token is None else effect.fencing_token.value),
         "version": effect.version.value,
         "created_at": effect.created_at.isoformat(),
-        "started_at": (
-            None if effect.started_at is None else effect.started_at.isoformat()
-        ),
-        "completed_at": (
-            None if effect.completed_at is None else effect.completed_at.isoformat()
-        ),
+        "started_at": (None if effect.started_at is None else effect.started_at.isoformat()),
+        "completed_at": (None if effect.completed_at is None else effect.completed_at.isoformat()),
         "metadata": list(effect.metadata),
     }
 
@@ -237,9 +231,7 @@ def approval_to_document(approval: Approval) -> dict[str, object]:
         "scope": approval.scope.value,
         "subject": approval.subject,
         "status": approval.status.value,
-        "expires_at": (
-            None if approval.expires_at is None else approval.expires_at.isoformat()
-        ),
+        "expires_at": (None if approval.expires_at is None else approval.expires_at.isoformat()),
         "version": approval.version.value,
         "created_at": approval.created_at.isoformat(),
     }
@@ -285,9 +277,7 @@ def lease_from_document(document: Mapping[str, Any]) -> Lease:
 def reconciliation_case_to_document(case: ReconciliationCase) -> dict[str, object]:
     resolution = case.resolution
     resolution_value = (
-        resolution.value
-        if isinstance(resolution, ReconciliationResolution)
-        else resolution
+        resolution.value if isinstance(resolution, ReconciliationResolution) else resolution
     )
     return {
         "id": str(case.id),
@@ -302,9 +292,7 @@ def reconciliation_case_to_document(case: ReconciliationCase) -> dict[str, objec
         "resolution_detail": case.resolution_detail,
         "version": case.version.value,
         "created_at": case.created_at.isoformat(),
-        "resolved_at": (
-            None if case.resolved_at is None else case.resolved_at.isoformat()
-        ),
+        "resolved_at": (None if case.resolved_at is None else case.resolved_at.isoformat()),
         "metadata": list(case.metadata),
     }
 
@@ -353,9 +341,7 @@ def reconciliation_evidence_to_document(
         "confidence": int(evidence.confidence),
         "observed_at": evidence.observed_at.isoformat(),
         "provider_timestamp": (
-            None
-            if evidence.provider_timestamp is None
-            else evidence.provider_timestamp.isoformat()
+            None if evidence.provider_timestamp is None else evidence.provider_timestamp.isoformat()
         ),
         "external_reference": (
             None
@@ -441,14 +427,10 @@ def integration_event_from_document(
         payload=payload,
         tenant_id=None if tenant is None else TenantId(str(tenant)),
         aggregate_type=(
-            None
-            if document.get("aggregate_type") is None
-            else str(document["aggregate_type"])
+            None if document.get("aggregate_type") is None else str(document["aggregate_type"])
         ),
         aggregate_id=(
-            None
-            if document.get("aggregate_id") is None
-            else str(document["aggregate_id"])
+            None if document.get("aggregate_id") is None else str(document["aggregate_id"])
         ),
         occurred_at=datetime.fromisoformat(str(document["occurred_at"])),
     )
