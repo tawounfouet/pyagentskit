@@ -12,7 +12,7 @@ import asyncio
 import sqlite3
 from collections.abc import Callable
 from contextvars import ContextVar, Token
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from importlib.resources import files
 from pathlib import Path
 from types import TracebackType
@@ -799,21 +799,28 @@ class SQLiteOutboxStore(_SQLiteRepository):
         *,
         worker_id: str,
         limit: int = 100,
+        claim_timeout_seconds: float = 60.0,
     ) -> tuple[OutboxRecord, ...]:
         if limit < 1:
             raise ValueError("outbox claim limit must be positive")
+        if claim_timeout_seconds < 0:
+            raise ValueError("outbox claim timeout cannot be negative")
 
         def operation() -> tuple[OutboxRecord, ...]:
             now = datetime.now(UTC)
+            stale_before = now - timedelta(seconds=claim_timeout_seconds)
             rows = self._db.connection.execute(
                 "SELECT event_id, event_json, status, attempt_count, next_attempt_at, "
-                "claimed_by, published_at, last_error FROM v2_outbox_events "
-                "WHERE status IN (?, ?) "
+                "claimed_by, claimed_at, published_at, last_error FROM v2_outbox_events "
+                "WHERE (status IN (?, ?) OR "
+                "(status=? AND claimed_at IS NOT NULL AND claimed_at<=?)) "
                 "AND (next_attempt_at IS NULL OR next_attempt_at<=?) "
                 "ORDER BY occurred_at, event_id LIMIT ?",
                 (
                     OutboxStatus.PENDING.value,
                     OutboxStatus.FAILED.value,
+                    OutboxStatus.CLAIMED.value,
+                    stale_before.isoformat(),
                     now.isoformat(),
                     limit,
                 ),
@@ -822,11 +829,12 @@ class SQLiteOutboxStore(_SQLiteRepository):
             for row in rows:
                 attempts = int(row["attempt_count"]) + 1
                 self._db.connection.execute(
-                    "UPDATE v2_outbox_events SET status=?, claimed_by=?, "
+                    "UPDATE v2_outbox_events SET status=?, claimed_by=?, claimed_at=?, "
                     "attempt_count=? WHERE event_id=?",
                     (
                         OutboxStatus.CLAIMED.value,
                         worker_id,
+                        now.isoformat(),
                         attempts,
                         row["event_id"],
                     ),
@@ -840,6 +848,7 @@ class SQLiteOutboxStore(_SQLiteRepository):
                         attempt_count=attempts,
                         next_attempt_at=_from_iso(row["next_attempt_at"]),
                         claimed_by=worker_id,
+                        claimed_at=now,
                         published_at=_from_iso(row["published_at"]),
                         last_error=row["last_error"],
                     )
@@ -852,7 +861,7 @@ class SQLiteOutboxStore(_SQLiteRepository):
         def operation() -> None:
             cursor = self._db.connection.execute(
                 "UPDATE v2_outbox_events SET status=?, claimed_by=NULL, "
-                "published_at=?, last_error=NULL WHERE event_id=?",
+                "claimed_at=NULL, published_at=?, last_error=NULL WHERE event_id=?",
                 (
                     OutboxStatus.PUBLISHED.value,
                     datetime.now(UTC).isoformat(),
@@ -867,8 +876,8 @@ class SQLiteOutboxStore(_SQLiteRepository):
     async def mark_failed(self, event_id: str, *, error: str) -> None:
         def operation() -> None:
             cursor = self._db.connection.execute(
-                "UPDATE v2_outbox_events SET status=?, claimed_by=NULL, last_error=? "
-                "WHERE event_id=?",
+                "UPDATE v2_outbox_events SET status=?, claimed_by=NULL, "
+                "claimed_at=NULL, last_error=? WHERE event_id=?",
                 (OutboxStatus.FAILED.value, error, event_id),
             )
             if cursor.rowcount != 1:
@@ -879,8 +888,8 @@ class SQLiteOutboxStore(_SQLiteRepository):
     async def release_claim(self, event_id: str) -> None:
         def operation() -> None:
             cursor = self._db.connection.execute(
-                "UPDATE v2_outbox_events SET status=?, claimed_by=NULL "
-                "WHERE event_id=?",
+                "UPDATE v2_outbox_events SET status=?, claimed_by=NULL, "
+                "claimed_at=NULL WHERE event_id=?",
                 (OutboxStatus.PENDING.value, event_id),
             )
             if cursor.rowcount != 1:
