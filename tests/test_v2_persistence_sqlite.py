@@ -234,6 +234,24 @@ class SQLitePersistenceTests(unittest.IsolatedAsyncioTestCase):
             )
         await inbox_reopened.close()
 
+    async def test_outbox_claim_is_reclaimed_after_publisher_crash(self) -> None:
+        outbox = SQLiteOutboxStore(self.path)
+        event = IntegrationEvent(name="effect.changed")
+        await outbox.append(event)
+
+        first = await outbox.claim_batch(worker_id="publisher-a")
+        self.assertEqual(first[0].attempt_count, 1)
+        await outbox.close()
+
+        reopened = SQLiteOutboxStore(self.path)
+        second = await reopened.claim_batch(
+            worker_id="publisher-b",
+            claim_timeout_seconds=0,
+        )
+        self.assertEqual(second[0].attempt_count, 2)
+        self.assertEqual(second[0].claimed_by, "publisher-b")
+        await reopened.close()
+
     async def test_unit_of_work_rolls_back_domain_and_outbox_together(self) -> None:
         run = Run()
         event = IntegrationEvent(
