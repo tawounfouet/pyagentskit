@@ -125,7 +125,10 @@ class PostgresV2PersistenceTests(unittest.IsolatedAsyncioTestCase):
         await repository.initialize()
         await repository.initialize()
         self.assertTrue(
-            any("CREATE TABLE IF NOT EXISTS pakv2_v2_schema_migrations" in q for q, _ in self.connection.executed)
+            any(
+                "CREATE TABLE IF NOT EXISTS pakv2_v2_schema_migrations" in query
+                for query, _ in self.connection.executed
+            )
         )
 
         with self.assertRaises(ValueError):
