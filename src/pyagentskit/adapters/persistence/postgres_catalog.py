@@ -6,8 +6,6 @@ from ...domain.entities import (
     Artifact,
     Conversation,
     ConversationMessage,
-    RuntimeBinding,
-    RuntimeInvocation,
     Session,
     Worker,
 )
@@ -17,8 +15,6 @@ from ...domain.shared import (
     ArtifactId,
     ConversationId,
     MessageId,
-    RuntimeBindingId,
-    RuntimeInvocationId,
     SessionId,
     WorkerId,
 )
@@ -30,10 +26,6 @@ from ._catalog_codec import (
     conversation_to_document,
     message_from_document,
     message_to_document,
-    runtime_binding_from_document,
-    runtime_binding_to_document,
-    runtime_invocation_from_document,
-    runtime_invocation_to_document,
     session_from_document,
     session_to_document,
     worker_from_document,
@@ -402,143 +394,6 @@ class PostgresV2ArtifactRepository(_PostgresRepository):
         await self._db.call(operation)
 
 
-class PostgresV2RuntimeRepository(_PostgresRepository):
-    async def get_binding(
-        self,
-        binding_id: RuntimeBindingId,
-    ) -> RuntimeBinding | None:
-        table = self._db.table("runtime_bindings")
-
-        async def operation(
-            connection: AsyncPostgresConnection,
-        ) -> RuntimeBinding | None:
-            row = await connection.fetchrow(
-                f"SELECT payload_json FROM {table} WHERE id=$1",
-                str(binding_id),
-            )
-            return (
-                None
-                if row is None
-                else runtime_binding_from_document(loads(str(row["payload_json"])))
-            )
-
-        return await self._db.call(operation)
-
-    async def add_binding(self, binding: RuntimeBinding) -> None:
-        table = self._db.table("runtime_bindings")
-
-        async def operation(connection: AsyncPostgresConnection) -> None:
-            row = await connection.fetchrow(
-                f"INSERT INTO {table}("
-                "id,run_id,runtime_id,runtime_family,bound_at,payload_json"
-                ") VALUES ($1,$2,$3,$4,$5,$6::jsonb) "
-                "ON CONFLICT(id) DO NOTHING RETURNING id",
-                str(binding.id),
-                None if binding.run_id is None else str(binding.run_id),
-                binding.resolved_runtime_id,
-                binding.runtime_family,
-                binding.bound_at,
-                dumps(runtime_binding_to_document(binding)),
-            )
-            if row is not None:
-                return
-            duplicate = await connection.fetchrow(
-                f"SELECT id FROM {table} WHERE id=$1",
-                str(binding.id),
-            )
-            if duplicate is not None:
-                raise DuplicateAggregateError(
-                    f"runtime binding {binding.id} already exists"
-                )
-            raise ConcurrencyConflictError(
-                "runtime binding references unavailable durable state"
-            )
-
-        await self._db.call(operation)
-
-    async def get_invocation(
-        self,
-        invocation_id: RuntimeInvocationId,
-    ) -> RuntimeInvocation | None:
-        table = self._db.table("runtime_invocations")
-
-        async def operation(
-            connection: AsyncPostgresConnection,
-        ) -> RuntimeInvocation | None:
-            row = await connection.fetchrow(
-                f"SELECT payload_json FROM {table} WHERE id=$1",
-                str(invocation_id),
-            )
-            return (
-                None
-                if row is None
-                else runtime_invocation_from_document(loads(str(row["payload_json"])))
-            )
-
-        return await self._db.call(operation)
-
-    async def add_invocation(self, invocation: RuntimeInvocation) -> None:
-        table = self._db.table("runtime_invocations")
-
-        async def operation(connection: AsyncPostgresConnection) -> None:
-            row = await connection.fetchrow(
-                f"INSERT INTO {table}("
-                "id,run_id,binding_id,status,version,payload_json"
-                ") VALUES ($1,$2,$3,$4,$5,$6::jsonb) "
-                "ON CONFLICT(id) DO NOTHING RETURNING id",
-                str(invocation.id),
-                str(invocation.run_id),
-                str(invocation.binding_id),
-                invocation.status.value,
-                invocation.version.value,
-                dumps(runtime_invocation_to_document(invocation)),
-            )
-            if row is not None:
-                return
-            duplicate = await connection.fetchrow(
-                f"SELECT id FROM {table} WHERE id=$1",
-                str(invocation.id),
-            )
-            if duplicate is not None:
-                raise DuplicateAggregateError(
-                    f"runtime invocation {invocation.id} already exists"
-                )
-            raise ConcurrencyConflictError(
-                "runtime invocation references unavailable durable state"
-            )
-
-        await self._db.call(operation)
-
-    async def save_invocation(
-        self,
-        invocation: RuntimeInvocation,
-        *,
-        expected_version: AggregateVersion,
-    ) -> None:
-        _require_increment(invocation.version, expected_version)
-        table = self._db.table("runtime_invocations")
-
-        async def operation(connection: AsyncPostgresConnection) -> None:
-            row = await connection.fetchrow(
-                f"UPDATE {table} SET run_id=$2,binding_id=$3,status=$4,"
-                "version=$5,payload_json=$6::jsonb "
-                "WHERE id=$1 AND version=$7 RETURNING id",
-                str(invocation.id),
-                str(invocation.run_id),
-                str(invocation.binding_id),
-                invocation.status.value,
-                invocation.version.value,
-                dumps(runtime_invocation_to_document(invocation)),
-                expected_version.value,
-            )
-            if row is None:
-                raise ConcurrencyConflictError(
-                    f"stale or missing runtime invocation {invocation.id}"
-                )
-
-        await self._db.call(operation)
-
-
 def bind_postgres_catalog(
     database: _PostgresV2Database,
 ) -> dict[str, object]:
@@ -549,7 +404,6 @@ def bind_postgres_catalog(
         "conversations": PostgresV2ConversationRepository(database),
         "messages": PostgresV2MessageRepository(database),
         "workers": PostgresV2WorkerRepository(database),
-        "runtimes": PostgresV2RuntimeRepository(database),
         "artifacts": PostgresV2ArtifactRepository(database),
     }
 
@@ -567,7 +421,6 @@ __all__ = [
     "PostgresV2ArtifactRepository",
     "PostgresV2ConversationRepository",
     "PostgresV2MessageRepository",
-    "PostgresV2RuntimeRepository",
     "PostgresV2SessionRepository",
     "PostgresV2WorkerRepository",
     "bind_postgres_catalog",
