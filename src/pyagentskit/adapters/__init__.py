@@ -19,6 +19,16 @@ from .persistence import (
     MemorySessionRepository,
     MemoryUnitOfWork,
     MemoryWorkerRepository,
+    SQLiteApprovalRepository,
+    SQLiteAuditStore,
+    SQLiteEffectRepository,
+    SQLiteInboxStore,
+    SQLiteLeaseRepository,
+    SQLiteMemoryRepository,
+    SQLiteOutboxStore,
+    SQLiteReconciliationRepository,
+    SQLiteRunRepository,
+    SQLiteUnitOfWork,
 )
 
 __all__ = [
@@ -41,4 +51,14 @@ __all__ = [
     "MemoryWorkerRepository",
     "NativeRuntimeAdapter",
     "NativeRuntimeEngine",
+    "SQLiteApprovalRepository",
+    "SQLiteAuditStore",
+    "SQLiteEffectRepository",
+    "SQLiteInboxStore",
+    "SQLiteLeaseRepository",
+    "SQLiteMemoryRepository",
+    "SQLiteOutboxStore",
+    "SQLiteReconciliationRepository",
+    "SQLiteRunRepository",
+    "SQLiteUnitOfWork",
 ]
