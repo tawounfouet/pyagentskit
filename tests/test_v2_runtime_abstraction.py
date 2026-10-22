@@ -264,6 +264,11 @@ class RuntimeNegotiationTests(unittest.TestCase):
         RuntimeBindingPolicy.validate_candidate(binding, same_family)
         with self.assertRaises(RuntimeBindingError):
             RuntimeBindingPolicy.validate_candidate(binding, other_family)
+        with self.assertRaises(RuntimeBindingError):
+            RuntimeBindingPolicy.validate_candidate(
+                RuntimeBinding(runtime_name="legacy"),
+                same_family,
+            )
 
     def test_registry_rejects_collisions_and_lists_canonically(self) -> None:
         registry = InMemoryRuntimeRegistry()
