@@ -9,10 +9,12 @@ from pyagentskit.adapters.persistence import (
     MemoryInboxStore,
     MemoryOutboxStore,
     MemoryRunRepository,
+    MemoryRuntimeRepository,
     SQLiteEffectRepository,
     SQLiteInboxStore,
     SQLiteOutboxStore,
     SQLiteRunRepository,
+    SQLiteRuntimeRepository,
 )
 from tests.persistence_contract_suite import PersistenceContractSuiteMixin
 
@@ -26,6 +28,9 @@ class MemoryPersistenceCommonContracts(
 
     async def make_effect_repository(self):
         return MemoryEffectRepository()
+
+    async def make_runtime_repository(self):
+        return MemoryRuntimeRepository()
 
     async def make_outbox_store(self):
         return MemoryOutboxStore()
@@ -59,6 +64,9 @@ class SQLitePersistenceCommonContracts(
 
     async def make_effect_repository(self):
         return self._track(SQLiteEffectRepository(self.path))
+
+    async def make_runtime_repository(self):
+        return self._track(SQLiteRuntimeRepository(self.path))
 
     async def make_outbox_store(self):
         return self._track(SQLiteOutboxStore(self.path))
