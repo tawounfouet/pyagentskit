@@ -17,6 +17,7 @@ from pyagentskit.adapters.persistence import (
     PostgresV2LeaseRepository,
     PostgresV2OutboxStore,
     PostgresV2RunRepository,
+    PostgresV2RuntimeRepository,
     PostgresV2UnitOfWork,
 )
 from pyagentskit.contracts import InboxRecord, OutboxStatus
@@ -133,6 +134,9 @@ class PostgresV2LiveQualification(
 
     async def make_effect_repository(self):
         return PostgresV2EffectRepository(self.pool, table_prefix=self.prefix)
+
+    async def make_runtime_repository(self):
+        return PostgresV2RuntimeRepository(self.pool, table_prefix=self.prefix)
 
     async def make_outbox_store(self):
         return PostgresV2OutboxStore(self.pool, table_prefix=self.prefix)
