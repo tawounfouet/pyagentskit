@@ -284,7 +284,11 @@ def lease_from_document(document: Mapping[str, Any]) -> Lease:
 
 def reconciliation_case_to_document(case: ReconciliationCase) -> dict[str, object]:
     resolution = case.resolution
-    resolution_value = resolution.value if isinstance(resolution, ReconciliationResolution) else resolution
+    resolution_value = (
+        resolution.value
+        if isinstance(resolution, ReconciliationResolution)
+        else resolution
+    )
     return {
         "id": str(case.id),
         "effect_id": str(case.effect_id),
