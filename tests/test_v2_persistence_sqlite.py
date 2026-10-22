@@ -20,6 +20,7 @@ from pyagentskit.contracts import InboxRecord, InboxStatus, OutboxStatus
 from pyagentskit.domain import (
     Approval,
     ApprovalStatus,
+    AuditEvent,
     ConcurrencyConflictError,
     DuplicateAggregateError,
     Effect,
@@ -265,7 +266,7 @@ class SQLitePersistenceTests(unittest.IsolatedAsyncioTestCase):
         async with uow:
             await uow.runs.add(run)
             await uow.audit.append(
-                __import__("pyagentskit.domain", fromlist=["AuditEvent"]).AuditEvent(
+                AuditEvent(
                     event_type="run.created",
                     subject=str(run.id),
                 )
