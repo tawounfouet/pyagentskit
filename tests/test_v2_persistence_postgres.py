@@ -24,7 +24,10 @@ from pyagentskit.adapters.persistence._codec import (
     dumps,
     effect_to_document,
     integration_event_to_document,
+    integration_event_from_document,
     lease_to_document,
+    loads,
+    memory_from_document,
     memory_to_document,
     reconciliation_case_to_document,
     run_to_document,
@@ -35,9 +38,12 @@ from pyagentskit.domain import (
     ApprovalStatus,
     AuditEvent,
     ConcurrencyConflictError,
+    DuplicateAggregateError,
     Effect,
     FencingToken,
+    IdempotencyConflictError,
     IdempotencyKey,
+    InboxDigestConflictError,
     InputFingerprint,
     IntegrationEvent,
     Lease,
@@ -49,7 +55,10 @@ from pyagentskit.domain import (
     RunStatus,
     WorkerId,
 )
-from pyagentskit.domain.errors import PersistenceError
+from pyagentskit.domain.errors import (
+    PersistenceCorruptionError,
+    PersistenceError,
+)
 from pyagentskit.postgres import AsyncPostgresConnection, AsyncPostgresPool
 
 
@@ -326,9 +335,7 @@ class PostgresV2PersistenceTests(unittest.IsolatedAsyncioTestCase):
                 }
             ]
         )
-        self.connection.fetchrow_results.append(
-            {"attempt_count": 1, "claimed_at": now}
-        )
+        self.connection.fetchrow_results.append({"attempt_count": 1, "claimed_at": now})
         claimed = await outbox.claim_batch(worker_id="publisher")
         self.assertEqual(claimed[0].status, OutboxStatus.CLAIMED)
         self.assertEqual(claimed[0].attempt_count, 1)
@@ -350,9 +357,7 @@ class PostgresV2PersistenceTests(unittest.IsolatedAsyncioTestCase):
             external_event_id="delivery-42",
             digest="a" * 64,
         )
-        self.connection.fetchrow_results.append(
-            {"external_event_id": record.external_event_id}
-        )
+        self.connection.fetchrow_results.append({"external_event_id": record.external_event_id})
         self.assertTrue(await inbox.reserve(record))
 
         self.connection.fetchrow_results.append(
@@ -381,6 +386,279 @@ class PostgresV2PersistenceTests(unittest.IsolatedAsyncioTestCase):
             record.external_event_id,
             error="handler failure",
         )
+
+    async def test_codec_corruption_and_non_serializable_payloads_fail_closed(self) -> None:
+        with self.assertRaises(PersistenceError):
+            dumps({"bad": object()})
+        with self.assertRaises(PersistenceCorruptionError):
+            loads("{not-json")
+        with self.assertRaises(PersistenceCorruptionError):
+            loads("[]")
+        with self.assertRaises(PersistenceCorruptionError):
+            memory_from_document(
+                {
+                    "id": "memory_bad",
+                    "tenant_id": "tenant_bad",
+                    "scope": "tenant",
+                    "scope_id": None,
+                    "key": "bad",
+                    "value": "not-an-object",
+                    "version": 0,
+                    "created_at": datetime.now(UTC).isoformat(),
+                    "updated_at": datetime.now(UTC).isoformat(),
+                }
+            )
+        with self.assertRaises(PersistenceCorruptionError):
+            integration_event_from_document(
+                {
+                    "event_id": "evt-bad",
+                    "name": "bad.event",
+                    "payload": "not-an-object",
+                    "occurred_at": datetime.now(UTC).isoformat(),
+                }
+            )
+
+    async def test_initial_migration_and_provider_failures_are_normalized(self) -> None:
+        fresh = ScriptedPostgresPool()
+        fresh.connection.schema_version = 0
+        repository = PostgresV2RunRepository(fresh, table_prefix="pakfresh")
+        await repository.initialize()
+        self.assertTrue(
+            any(
+                "CREATE TABLE IF NOT EXISTS pakfresh_v2_runs" in query
+                for query, _ in fresh.connection.executed
+            )
+        )
+
+        failing = ScriptedPostgresPool()
+        broken = PostgresV2RunRepository(failing, table_prefix="pakbroken")
+        with self.assertRaises(PersistenceError):
+            await broken.get(Run().id)
+
+    async def test_repository_conflicts_are_fail_closed(self) -> None:
+        run = Run()
+        running = run.transition(RunStatus.RUNNING)
+        runs = PostgresV2RunRepository(self.pool, table_prefix="pakconflict")
+        self.connection.fetchrow_results.extend([None, None, None])
+        with self.assertRaises(DuplicateAggregateError):
+            await runs.add(run)
+        with self.assertRaises(ConcurrencyConflictError):
+            await runs.save(running, expected_version=run.version)
+        self.assertIsNone(await runs.get(run.id))
+
+        effect = Effect(
+            run_id=run.id,
+            idempotency_key=IdempotencyKey("run", "conflict"),
+            fingerprint=InputFingerprint.from_text("original"),
+        )
+        effects = PostgresV2EffectRepository(self.pool, table_prefix="pakconflict")
+        self.connection.fetchrow_results.append(None)
+        with self.assertRaises(KeyError):
+            await effects.get(effect.id)
+        self.connection.fetchrow_results.append(None)
+        self.assertIsNone(
+            await effects.find_by_idempotency_key(
+                effect.idempotency_scope,
+                effect.idempotency_key,
+            )
+        )
+        self.connection.fetchrow_results.append(None)
+        with self.assertRaises(ConcurrencyConflictError):
+            await effects.save(effect.begin(), expected_version=effect.version)
+
+        self.connection.fetchrow_results.extend([None, None, None])
+        with self.assertRaises(PersistenceError):
+            await effects.reserve(
+                Effect(
+                    run_id=run.id,
+                    fingerprint=InputFingerprint.from_text("missing-conflict-row"),
+                )
+            )
+
+    async def test_effect_duplicate_key_with_different_fingerprint_is_conflict(self) -> None:
+        run = Run()
+        original = Effect(
+            run_id=run.id,
+            idempotency_key=IdempotencyKey("run", "same-key"),
+            fingerprint=InputFingerprint.from_text("one"),
+        )
+        candidate = Effect(
+            run_id=run.id,
+            idempotency_key=original.idempotency_key,
+            fingerprint=InputFingerprint.from_text("two"),
+        )
+        effects = PostgresV2EffectRepository(self.pool, table_prefix="pakidem")
+        self.connection.fetchrow_results.extend(
+            [
+                None,
+                self._row(effect_to_document(original)),
+            ]
+        )
+        with self.assertRaises(IdempotencyConflictError):
+            await effects.reserve(candidate)
+
+    async def test_state_repository_duplicate_and_stale_paths(self) -> None:
+        memories = PostgresV2MemoryRepository(self.pool, table_prefix="pakstatefail")
+        entry = MemoryEntry(
+            scope=MemoryScope.CUSTOM,
+            scope_id="scope-x",
+            key="key-x",
+            value={"v": 1},
+        )
+        revised = entry.revise({"v": 2})
+        self.connection.fetchrow_results.extend([None, None, None])
+        with self.assertRaises(DuplicateAggregateError):
+            await memories.put(entry)
+        with self.assertRaises(ConcurrencyConflictError):
+            await memories.save(revised, expected_version=entry.version)
+        self.assertIsNone(await memories.get(entry.id))
+
+        effect = Effect()
+        case = ReconciliationCase(effect_id=effect.id, reason="ambiguous")
+        running = case.start()
+        evidence = ReconciliationEvidence(case_id=case.id, summary="duplicate")
+        reconciliations = PostgresV2ReconciliationRepository(
+            self.pool,
+            table_prefix="pakstatefail",
+        )
+        self.connection.fetchrow_results.extend([None, None, None])
+        with self.assertRaises(DuplicateAggregateError):
+            await reconciliations.save(case, expected_version=None)
+        with self.assertRaises(ConcurrencyConflictError):
+            await reconciliations.save(running, expected_version=case.version)
+        with self.assertRaises(DuplicateAggregateError):
+            await reconciliations.append_evidence(evidence)
+
+        approval = Approval(subject=str(effect.id))
+        approved = approval.transition(ApprovalStatus.APPROVED)
+        approvals = PostgresV2ApprovalRepository(self.pool, table_prefix="pakstatefail")
+        self.connection.fetchrow_results.extend([None, None, None])
+        with self.assertRaises(DuplicateAggregateError):
+            await approvals.add(approval)
+        with self.assertRaises(ConcurrencyConflictError):
+            await approvals.save(approved, expected_version=approval.version)
+        self.assertIsNone(await approvals.get(approval.id))
+
+    async def test_lease_fencing_conflict_paths(self) -> None:
+        leases = PostgresV2LeaseRepository(self.pool, table_prefix="pakleasefail")
+        held = Lease(resource="run:conflict").acquire(
+            WorkerId("worker-a"),
+            FencingToken(2),
+        )
+
+        self.connection.fetchrow_results.append({"current_fencing_token": 1})
+        with self.assertRaises(ConcurrencyConflictError):
+            await leases.add(held)
+
+        self.connection.fetchrow_results.extend(
+            [
+                {"current_fencing_token": 2},
+                None,
+                {"id": str(held.id)},
+            ]
+        )
+        with self.assertRaises(DuplicateAggregateError):
+            await leases.add(held)
+
+        other = Lease(resource=held.resource).acquire(
+            WorkerId("worker-b"),
+            FencingToken(2),
+        )
+        self.connection.fetchrow_results.extend(
+            [
+                {"current_fencing_token": 2},
+                None,
+                None,
+            ]
+        )
+        with self.assertRaises(ConcurrencyConflictError):
+            await leases.add(other)
+
+        self.connection.fetchrow_results.append(None)
+        with self.assertRaises(ConcurrencyConflictError):
+            await leases.save(held.release(), expected_version=held.version)
+
+        self.connection.fetchrow_results.append(None)
+        with self.assertRaises(PersistenceError):
+            await leases.next_fencing_token("run:missing")
+
+        self.connection.fetchrow_results.append(None)
+        self.assertIsNone(await leases.get_current("run:none"))
+
+    async def test_audit_outbox_and_inbox_missing_conflict_paths(self) -> None:
+        audit = PostgresV2AuditStore(self.pool, table_prefix="pakmsgfail")
+        event = AuditEvent(event_type="test", subject="subject")
+        self.connection.fetchrow_results.append(None)
+        with self.assertRaises(DuplicateAggregateError):
+            await audit.append(event)
+
+        outbox = PostgresV2OutboxStore(self.pool, table_prefix="pakmsgfail")
+        integration = IntegrationEvent(name="event.test")
+        self.connection.fetchrow_results.append(None)
+        with self.assertRaises(DuplicateAggregateError):
+            await outbox.append(integration)
+        with self.assertRaises(ValueError):
+            await outbox.claim_batch(worker_id="w", limit=0)
+        with self.assertRaises(ValueError):
+            await outbox.claim_batch(worker_id="w", claim_timeout_seconds=-1)
+
+        self.connection.fetch_results.append(
+            [
+                {
+                    "event_id": integration.event_id,
+                    "event_json": dumps(integration_event_to_document(integration)),
+                    "attempt_count": 0,
+                    "next_attempt_at": None,
+                    "published_at": None,
+                    "last_error": None,
+                }
+            ]
+        )
+        self.connection.fetchrow_results.append(None)
+        self.assertEqual(await outbox.claim_batch(worker_id="w"), ())
+
+        for operation in (
+            lambda: outbox.mark_published("missing"),
+            lambda: outbox.mark_failed("missing", error="x"),
+            lambda: outbox.release_claim("missing"),
+        ):
+            self.connection.fetchrow_results.append(None)
+            with self.assertRaises(KeyError):
+                await operation()
+
+        inbox = PostgresV2InboxStore(self.pool, table_prefix="pakmsgfail")
+        record = InboxRecord(source="source", external_event_id="evt", digest="a" * 64)
+        self.connection.fetchrow_results.extend([None, {"digest": record.digest}])
+        self.assertFalse(await inbox.reserve(record))
+
+        self.connection.fetchrow_results.extend([None, {"digest": "b" * 64}])
+        with self.assertRaises(InboxDigestConflictError):
+            await inbox.reserve(record)
+
+        self.connection.fetchrow_results.extend([None, None])
+        with self.assertRaises(PersistenceError):
+            await inbox.reserve(record)
+
+        self.connection.fetchrow_results.extend([None, None, None])
+        self.assertIsNone(await inbox.get("source", "missing"))
+        with self.assertRaises(KeyError):
+            await inbox.mark_processed("source", "missing")
+        with self.assertRaises(KeyError):
+            await inbox.mark_failed("source", "missing", error="x")
+
+    async def test_unit_of_work_misuse_and_explicit_rollback(self) -> None:
+        uow = PostgresV2UnitOfWork(self.pool, table_prefix="pakuowfail")
+        with self.assertRaises(RuntimeError):
+            await uow.commit()
+        await uow.rollback()
+
+        await uow.__aenter__()
+        with self.assertRaises(RuntimeError):
+            await uow.__aenter__()
+        await uow.rollback()
+
+        commands = [query for query, _ in self.connection.executed]
+        self.assertIn("ROLLBACK", commands)
 
     async def test_unit_of_work_shares_connection_and_commits_or_rolls_back(self) -> None:
         run = Run()
