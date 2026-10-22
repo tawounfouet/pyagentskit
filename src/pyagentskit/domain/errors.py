@@ -29,6 +29,10 @@ class RuntimeRegistrationError(DomainError):
     """Raised when a runtime cannot be registered safely."""
 
 
+class RuntimeBindingError(DomainError):
+    """Raised when a Run would violate its durable runtime binding."""
+
+
 class RuntimeAdapterError(DomainError):
     """Raised when an adapter cannot honour the runtime contract."""
 
