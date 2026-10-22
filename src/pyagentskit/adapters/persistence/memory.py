@@ -680,12 +680,18 @@ class MemoryBlobStore:
 @dataclass(slots=True)
 class _MemoryUnitOfWorkSnapshot:
     runs: dict[RunId, Run]
+    sessions: dict[SessionId, Session]
+    conversations: dict[ConversationId, Conversation]
+    messages: dict[MessageId, ConversationMessage]
+    message_conversation_ids: dict[MessageId, ConversationId]
     effects: dict[EffectId, Effect]
     effect_idempotency: dict[tuple[IdempotencyScope, str], EffectId]
     memories: dict[MemoryEntryId, MemoryEntry]
     reconciliation_cases: dict[ReconciliationCaseId, ReconciliationCase]
     reconciliation_evidence: dict[ReconciliationEvidenceId, ReconciliationEvidence]
     approvals: dict[ApprovalId, Approval]
+    workers: dict[WorkerId, Worker]
+    artifacts: dict[ArtifactId, Artifact]
     runtime_bindings: dict[RuntimeBindingId, RuntimeBinding]
     runtime_invocations: dict[RuntimeInvocationId, RuntimeInvocation]
     outbox: dict[str, OutboxRecord]
@@ -697,10 +703,15 @@ class MemoryUnitOfWork:
 
     def __init__(self) -> None:
         self.runs = MemoryRunRepository()
+        self.sessions = MemorySessionRepository()
+        self.conversations = MemoryConversationRepository()
+        self.messages = MemoryMessageRepository()
         self.effects = MemoryEffectRepository()
         self.memories = InMemoryMemoryRepository()
         self.reconciliations = MemoryReconciliationRepository()
         self.approvals = MemoryApprovalRepository()
+        self.workers = MemoryWorkerRepository()
+        self.artifacts = MemoryArtifactRepository()
         self.runtimes = MemoryRuntimeRepository()
         self.outbox = MemoryOutboxStore()
         self.audit = MemoryAuditStore()
@@ -711,12 +722,18 @@ class MemoryUnitOfWork:
         self._committed = False
         self._snapshot = _MemoryUnitOfWorkSnapshot(
             runs=deepcopy(self.runs._items),
+            sessions=deepcopy(self.sessions._items),
+            conversations=deepcopy(self.conversations._items),
+            messages=deepcopy(self.messages._items),
+            message_conversation_ids=deepcopy(self.messages._conversation_ids),
             effects=deepcopy(self.effects._items),
             effect_idempotency=deepcopy(self.effects._idempotency),
             memories=deepcopy(self.memories._items),
             reconciliation_cases=deepcopy(self.reconciliations._cases),
             reconciliation_evidence=deepcopy(self.reconciliations._evidence),
             approvals=deepcopy(self.approvals._items),
+            workers=deepcopy(self.workers._items),
+            artifacts=deepcopy(self.artifacts._items),
             runtime_bindings=deepcopy(self.runtimes._bindings),
             runtime_invocations=deepcopy(self.runtimes._invocations),
             outbox=deepcopy(self.outbox._records),
@@ -742,12 +759,18 @@ class MemoryUnitOfWork:
             return
         snapshot = self._snapshot
         self.runs._items = deepcopy(snapshot.runs)
+        self.sessions._items = deepcopy(snapshot.sessions)
+        self.conversations._items = deepcopy(snapshot.conversations)
+        self.messages._items = deepcopy(snapshot.messages)
+        self.messages._conversation_ids = deepcopy(snapshot.message_conversation_ids)
         self.effects._items = deepcopy(snapshot.effects)
         self.effects._idempotency = deepcopy(snapshot.effect_idempotency)
         self.memories._items = deepcopy(snapshot.memories)
         self.reconciliations._cases = deepcopy(snapshot.reconciliation_cases)
         self.reconciliations._evidence = deepcopy(snapshot.reconciliation_evidence)
         self.approvals._items = deepcopy(snapshot.approvals)
+        self.workers._items = deepcopy(snapshot.workers)
+        self.artifacts._items = deepcopy(snapshot.artifacts)
         self.runtimes._bindings = deepcopy(snapshot.runtime_bindings)
         self.runtimes._invocations = deepcopy(snapshot.runtime_invocations)
         self.outbox._records = deepcopy(snapshot.outbox)
