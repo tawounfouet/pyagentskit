@@ -38,4 +38,27 @@ __all__ = [
     "MemorySessionRepository",
     "MemoryUnitOfWork",
     "MemoryWorkerRepository",
+    "SQLiteApprovalRepository",
+    "SQLiteAuditStore",
+    "SQLiteEffectRepository",
+    "SQLiteInboxStore",
+    "SQLiteLeaseRepository",
+    "SQLiteMemoryRepository",
+    "SQLiteOutboxStore",
+    "SQLiteReconciliationRepository",
+    "SQLiteRunRepository",
+    "SQLiteUnitOfWork",
 ]
+
+from .sqlite import (
+    SQLiteApprovalRepository,
+    SQLiteAuditStore,
+    SQLiteEffectRepository,
+    SQLiteInboxStore,
+    SQLiteLeaseRepository,
+    SQLiteMemoryRepository,
+    SQLiteOutboxStore,
+    SQLiteReconciliationRepository,
+    SQLiteRunRepository,
+    SQLiteUnitOfWork,
+)
