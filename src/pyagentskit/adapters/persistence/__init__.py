@@ -19,6 +19,18 @@ from .memory import (
     MemoryUnitOfWork,
     MemoryWorkerRepository,
 )
+from .sqlite import (
+    SQLiteApprovalRepository,
+    SQLiteAuditStore,
+    SQLiteEffectRepository,
+    SQLiteInboxStore,
+    SQLiteLeaseRepository,
+    SQLiteMemoryRepository,
+    SQLiteOutboxStore,
+    SQLiteReconciliationRepository,
+    SQLiteRunRepository,
+    SQLiteUnitOfWork,
+)
 
 __all__ = [
     "InMemoryMemoryRepository",
@@ -49,16 +61,3 @@ __all__ = [
     "SQLiteRunRepository",
     "SQLiteUnitOfWork",
 ]
-
-from .sqlite import (
-    SQLiteApprovalRepository,
-    SQLiteAuditStore,
-    SQLiteEffectRepository,
-    SQLiteInboxStore,
-    SQLiteLeaseRepository,
-    SQLiteMemoryRepository,
-    SQLiteOutboxStore,
-    SQLiteReconciliationRepository,
-    SQLiteRunRepository,
-    SQLiteUnitOfWork,
-)
