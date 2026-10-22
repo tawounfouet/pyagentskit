@@ -111,6 +111,16 @@ def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def write_checksums(wheel: Path, sdist: Path) -> None:
+    """Keep release-local and repository-root checksum manifests synchronized."""
+
+    artifacts = (sdist, wheel)
+    release_lines = [f"{digest(path)}  {path.name}" for path in artifacts]
+    root_lines = [f"{digest(path)}  release-dist/{path.name}" for path in artifacts]
+    (DIST / "SHA256SUMS").write_text("\n".join(release_lines) + "\n", encoding="utf-8")
+    (ROOT / "SHA256SUMS").write_text("\n".join(root_lines) + "\n", encoding="utf-8")
+
+
 def verify_reproducible_build(wheel: Path, sdist: Path) -> None:
     """Build twice under a fixed epoch and require byte-identical artifacts."""
     with tempfile.TemporaryDirectory(prefix="pyagentskit-rebuild-") as temporary:
@@ -251,6 +261,7 @@ def main() -> None:
     run(sys.executable, "-m", "twine", "check", str(wheel), str(sdist))
     verify_archives(wheel, sdist)
     verify_reproducible_build(wheel, sdist)
+    write_checksums(wheel, sdist)
     smoke_install(wheel)
     print(f"PASS: PyAgentsKit {EXPECTED_VERSION} release-check", flush=True)
 
