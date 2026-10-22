@@ -35,7 +35,7 @@ from pyagentskit.domain import (
     RunStatus,
     WorkerId,
 )
-from pyagentskit.postgres import create_asyncpg_pool
+from pyagentskit.postgres import AsyncPostgresPool, create_asyncpg_pool
 
 _GATE = (
     os.getenv("PYAGENTSKIT_LIVE_POSTGRES") == "I_ACCEPT_DATABASE_WRITES"
@@ -64,9 +64,12 @@ async def _close_pool(pool: object) -> None:
         await close()
 
 
-async def _drop_tables(pool: object, prefix: str, suffixes: Iterable[str] = _SUFFIXES) -> None:
-    acquire = getattr(pool, "acquire")
-    async with acquire() as connection:
+async def _drop_tables(
+    pool: AsyncPostgresPool,
+    prefix: str,
+    suffixes: Iterable[str] = _SUFFIXES,
+) -> None:
+    async with pool.acquire() as connection:
         for suffix in suffixes:
             await connection.execute(
                 f"DROP TABLE IF EXISTS {prefix}_v2_{suffix} CASCADE"
