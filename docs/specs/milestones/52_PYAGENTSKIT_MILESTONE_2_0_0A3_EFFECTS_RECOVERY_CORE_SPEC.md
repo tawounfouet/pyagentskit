@@ -4,7 +4,7 @@
 **Version du document :** 1.0  
 **Date :** 22 octobre 2026  
 **Release cible :** `2.0.0a3`  
-**Statut :** **PLANNED**  
+**Statut :** **IMPLEMENTED — QUALIFICATION IN PROGRESS**  
 **Projet :** PyAgentsKit V2
 
 > **Faire des side effects réels, de l’ambiguïté et de la recovery des concepts first-class capables de survivre aux crashs sans répétition aveugle.**
