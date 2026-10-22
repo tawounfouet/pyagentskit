@@ -43,6 +43,7 @@ from pyagentskit.domain import (
     Run,
     RunStatus,
     RuntimeBinding,
+    RuntimeBindingError,
     RuntimeCapability,
     RuntimeHandle,
     RuntimeInvocation,
@@ -344,6 +345,21 @@ class RecoveryPlannerTests(unittest.TestCase):
         )
         plan = self.planner.plan(recovery_context(run=terminal, snapshot=snapshot))
         self.assertEqual(plan.next_action, NextAction.NO_ACTION)
+
+    def test_checkpoint_never_overrides_ambiguous_effect_truth(self) -> None:
+        unknown = Effect().begin().mark_unknown().open_reconciliation()
+        snapshot = RuntimeRecoverySnapshot(
+            status=RuntimeStatus.WAITING,
+            handle_valid=True,
+            capabilities=frozenset({RuntimeCapability.RESUME}),
+            checkpoint_available=True,
+        )
+
+        plan = self.planner.plan(
+            recovery_context(effects=(unknown,), snapshot=snapshot)
+        )
+
+        self.assertEqual(plan.next_action, NextAction.RECONCILE_EFFECT)
 
     def test_manual_reconciliation_blocks_runtime_progress(self) -> None:
         effect = Effect().begin().mark_unknown().open_reconciliation()
@@ -760,6 +776,46 @@ class RecoveryApplicationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(events[-1].event_type.value, "runtime.completed")
         self.assertEqual(audit.events[-1].event_type, "recovery.runtime_step_executed")
         await adapter.close()
+
+    async def test_executor_refuses_runtime_different_from_durable_binding(self) -> None:
+        class WrongRuntimeAdapter:
+            def __init__(self) -> None:
+                from pyagentskit.domain import RuntimeDescriptor
+
+                self.descriptor = RuntimeDescriptor(
+                    runtime_id="other/runtime@1",
+                    display_name="Other",
+                    runtime_family="test",
+                    adapter_version="1",
+                    contract_version="2",
+                    capabilities=frozenset({RuntimeCapability.START}),
+                )
+
+            async def start(self, request):
+                raise AssertionError("mismatched runtime must not start")
+
+            async def resume(self, request):
+                raise AssertionError("mismatched runtime must not resume")
+
+        planner = RecoveryPlanner()
+        executor = RuntimeRecoveryExecutor(planner=planner, audit=MemoryAuditSink())
+        context = recovery_context(
+            snapshot=RuntimeRecoverySnapshot(
+                status=RuntimeStatus.FAILED,
+                handle_valid=False,
+                capabilities=frozenset({RuntimeCapability.START}),
+                restart_safe=True,
+            )
+        )
+        plan = planner.plan(context)
+
+        with self.assertRaises(RuntimeBindingError):
+            await executor.execute(
+                plan,
+                context,
+                WrongRuntimeAdapter(),
+                start_request=RuntimeStartRequest(run_id=context.run.id, input="recover"),
+            )
 
     async def test_executor_discards_plan_after_ownership_change(self) -> None:
         class FakeAdapter:
