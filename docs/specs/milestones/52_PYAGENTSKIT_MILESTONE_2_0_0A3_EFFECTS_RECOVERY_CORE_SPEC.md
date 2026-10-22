@@ -488,6 +488,61 @@ bypassing the public/internal contracts
 
 ---
 
+# 22A. Qualification evidence — 22 octobre 2026
+
+La qualification CI du milestone a validé les gates suivants sur la branche `feat/v2-0-0a3-effects-recovery-core` :
+
+```text
+quality                  PASS
+package + fresh install  PASS
+Python 3.11              PASS
+Python 3.12              PASS
+Python 3.13              PASS
+release-qualification    PASS
+```
+
+Résultats du release gate :
+
+```text
+346 tests passed
+12 live/integration tests skipped by explicit opt-in policy
+coverage: 90.09%
+mypy: 83 source files, 0 issue
+ruff lint: PASS
+ruff format: PASS
+wheel: PASS
+sdist: PASS
+twine check: PASS
+reproducible double build: PASS
+fresh install / smoke imports: PASS
+v2_effect_recovery.py: PASS
+release-check: PASS
+```
+
+## Native runtime — portée qualifiée
+
+Le Native runtime est qualifié pour le **recovery gate** générique : le restart passe par le même `RecoveryPlan`, revalide le `RuntimeBinding`, l’ownership/fencing et les capabilities avant exécution.
+
+En revanche, PyAgentsKit **ne revendique pas** `TOOL_INTERCEPTION` pour le Native runtime dans `2.0.0a3`. Le Runner V1 exécute encore ses tools via sa boucle historique ; introduire une interception V2 pré-send de tous les tools effectful nécessiterait de modifier le chemin d’exécution V1 et dépasserait le périmètre sûr de ce jalon. La capability reste donc volontairement absente et le `SideEffectControlLevel` reste `BOUNDED`.
+
+Cette limite est conforme au principe :
+
+> advertised capabilities must not exceed demonstrated guarantees.
+
+Elle sera traitée avec les connectors/runtime integrations dédiés lorsque le contrat d’interception pourra être prouvé sans dégrader la compatibilité V1.
+
+## Release state
+
+Le code est **qualified** mais la release n’est pas encore publiée. Le seul item volontairement non coché dans la checklist de release reste :
+
+```text
+[ ] tag Git correspondant
+```
+
+Le passage à `RELEASED` intervient après merge sur `main`, création du tag `v2.0.0a3` et publication de la release GitHub.
+
+---
+
 # 23. Definition of Success
 
 `2.0.0a3 — Effects & Recovery Core` est réussi lorsque :
