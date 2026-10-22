@@ -29,6 +29,7 @@ from .postgres import (
     PostgresV2OutboxStore,
     PostgresV2ReconciliationRepository,
     PostgresV2RunRepository,
+    PostgresV2RuntimeRepository,
     PostgresV2UnitOfWork,
 )
 from .postgres_catalog import (
@@ -49,6 +50,7 @@ from .sqlite import (
     SQLiteOutboxStore,
     SQLiteReconciliationRepository,
     SQLiteRunRepository,
+    SQLiteRuntimeRepository,
     SQLiteUnitOfWork,
 )
 from .sqlite_catalog import (
