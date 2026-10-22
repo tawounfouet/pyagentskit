@@ -655,7 +655,9 @@ class FlagshipRecoveryScenarioTests(unittest.IsolatedAsyncioTestCase):
                     raise AssertionError("Effect must be durably marked for reconciliation")
                 persisted = reconciliations.cases.get(case.id)
                 if persisted is None or persisted.status is not ReconciliationStatus.RUNNING:
-                    raise AssertionError("ReconciliationCase must be durable before provider lookup")
+                    raise AssertionError(
+                        "ReconciliationCase must be durable before provider lookup"
+                    )
 
         port = FlagshipPort()
         reconciler = ReconcileEffect(
