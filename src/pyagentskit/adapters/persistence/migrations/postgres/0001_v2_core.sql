@@ -141,6 +141,48 @@ WHERE status = 'held';
 CREATE INDEX IF NOT EXISTS __PFX___v2_leases_resource_history_idx
 ON __PFX___v2_leases(resource, fencing_token DESC);
 
+CREATE TABLE IF NOT EXISTS __PFX___v2_runtime_bindings (
+    id TEXT PRIMARY KEY,
+    run_id TEXT,
+    runtime_id TEXT NOT NULL,
+    runtime_family VARCHAR(128),
+    bound_at TIMESTAMPTZ NOT NULL,
+    payload_json JSONB NOT NULL,
+    CONSTRAINT __PFX___v2_runtime_binding_run_fk
+        FOREIGN KEY (run_id) REFERENCES __PFX___v2_runs(id)
+        ON DELETE RESTRICT DEFERRABLE INITIALLY DEFERRED
+);
+
+CREATE INDEX IF NOT EXISTS __PFX___v2_runtime_bindings_run_idx
+ON __PFX___v2_runtime_bindings(run_id);
+
+CREATE TABLE IF NOT EXISTS __PFX___v2_runtime_invocations (
+    id TEXT PRIMARY KEY,
+    run_id TEXT NOT NULL,
+    binding_id TEXT NOT NULL,
+    runtime_id TEXT,
+    status VARCHAR(32) NOT NULL
+        CHECK (status IN (
+            'created','starting','running','waiting','completed','failed','cancelled','unknown'
+        )),
+    version BIGINT NOT NULL CHECK (version >= 0),
+    started_at TIMESTAMPTZ,
+    completed_at TIMESTAMPTZ,
+    payload_json JSONB NOT NULL,
+    CONSTRAINT __PFX___v2_runtime_invocation_run_fk
+        FOREIGN KEY (run_id) REFERENCES __PFX___v2_runs(id)
+        ON DELETE RESTRICT DEFERRABLE INITIALLY DEFERRED,
+    CONSTRAINT __PFX___v2_runtime_invocation_binding_fk
+        FOREIGN KEY (binding_id) REFERENCES __PFX___v2_runtime_bindings(id)
+        ON DELETE RESTRICT DEFERRABLE INITIALLY DEFERRED
+);
+
+CREATE INDEX IF NOT EXISTS __PFX___v2_runtime_invocations_run_idx
+ON __PFX___v2_runtime_invocations(run_id);
+
+CREATE INDEX IF NOT EXISTS __PFX___v2_runtime_invocations_binding_idx
+ON __PFX___v2_runtime_invocations(binding_id);
+
 CREATE TABLE IF NOT EXISTS __PFX___v2_audit_events (
     id TEXT PRIMARY KEY,
     subject TEXT NOT NULL,
