@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 from typing import Protocol, runtime_checkable
@@ -26,9 +26,9 @@ from ..domain.lifecycle import RunStatus
 from ..domain.shared import (
     AggregateVersion,
     ApprovalId,
-    FencingToken,
     ArtifactId,
     ConversationId,
+    FencingToken,
     MemoryEntryId,
     MessageId,
     RunId,
@@ -128,7 +128,11 @@ class ConversationRepository(Protocol):
 
 @runtime_checkable
 class MessageRepository(Protocol):
-    async def append(self, conversation_id: ConversationId, message: ConversationMessage) -> None: ...
+    async def append(
+        self,
+        conversation_id: ConversationId,
+        message: ConversationMessage,
+    ) -> None: ...
     async def get(self, message_id: MessageId) -> ConversationMessage | None: ...
     async def list_for_conversation(
         self,
@@ -168,7 +172,10 @@ class WorkerRepository(Protocol):
 class RuntimeRepository(Protocol):
     async def get_binding(self, binding_id: RuntimeBindingId) -> RuntimeBinding | None: ...
     async def add_binding(self, binding: RuntimeBinding) -> None: ...
-    async def get_invocation(self, invocation_id: RuntimeInvocationId) -> RuntimeInvocation | None: ...
+    async def get_invocation(
+        self,
+        invocation_id: RuntimeInvocationId,
+    ) -> RuntimeInvocation | None: ...
     async def add_invocation(self, invocation: RuntimeInvocation) -> None: ...
     async def save_invocation(
         self,
@@ -193,7 +200,12 @@ class AuditStore(Protocol):
 @runtime_checkable
 class OutboxStore(Protocol):
     async def append(self, event: IntegrationEvent) -> None: ...
-    async def claim_batch(self, *, worker_id: str, limit: int = 100) -> tuple[OutboxRecord, ...]: ...
+    async def claim_batch(
+        self,
+        *,
+        worker_id: str,
+        limit: int = 100,
+    ) -> tuple[OutboxRecord, ...]: ...
     async def mark_published(self, event_id: str) -> None: ...
     async def mark_failed(self, event_id: str, *, error: str) -> None: ...
     async def release_claim(self, event_id: str) -> None: ...
