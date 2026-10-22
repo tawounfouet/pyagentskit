@@ -36,7 +36,6 @@ from .postgres_catalog import (
     PostgresV2ArtifactRepository,
     PostgresV2ConversationRepository,
     PostgresV2MessageRepository,
-    PostgresV2RuntimeRepository,
     PostgresV2SessionRepository,
     PostgresV2WorkerRepository,
 )
@@ -57,7 +56,6 @@ from .sqlite_catalog import (
     SQLiteArtifactRepository,
     SQLiteConversationRepository,
     SQLiteMessageRepository,
-    SQLiteRuntimeRepository,
     SQLiteSessionRepository,
     SQLiteWorkerRepository,
 )
