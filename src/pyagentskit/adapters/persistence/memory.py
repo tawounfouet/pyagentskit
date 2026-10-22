@@ -74,9 +74,7 @@ def _require_cas(
             f"expected aggregate version {expected.value}, found {current.value}"
         )
     if new != expected.next():
-        raise ConcurrencyConflictError(
-            "saved aggregate version must advance by exactly one"
-        )
+        raise ConcurrencyConflictError("saved aggregate version must advance by exactly one")
 
 
 class MemoryRunRepository:
@@ -155,9 +153,7 @@ class InMemoryMemoryRepository:
     ) -> None:
         current = self._items.get(entry.id)
         if current is None:
-            raise ConcurrencyConflictError(
-                f"memory entry {entry.id} does not exist"
-            )
+            raise ConcurrencyConflictError(f"memory entry {entry.id} does not exist")
         _require_cas(
             current=current.version,
             expected=expected_version,
@@ -190,9 +186,7 @@ class MemoryConversationRepository:
 
     async def add(self, conversation: Conversation) -> None:
         if conversation.id in self._items:
-            raise DuplicateAggregateError(
-                f"conversation {conversation.id} already exists"
-            )
+            raise DuplicateAggregateError(f"conversation {conversation.id} already exists")
         self._items[conversation.id] = conversation
 
     async def save(
@@ -203,9 +197,7 @@ class MemoryConversationRepository:
     ) -> None:
         current = self._items.get(conversation.id)
         if current is None:
-            raise ConcurrencyConflictError(
-                f"conversation {conversation.id} does not exist"
-            )
+            raise ConcurrencyConflictError(f"conversation {conversation.id} does not exist")
         _require_cas(
             current=current.version,
             expected=expected_version,
@@ -217,9 +209,7 @@ class MemoryConversationRepository:
         self,
         session_id: SessionId,
     ) -> tuple[Conversation, ...]:
-        return tuple(
-            item for item in self._items.values() if item.session_id == session_id
-        )
+        return tuple(item for item in self._items.values() if item.session_id == session_id)
 
 
 class MemoryMessageRepository:
@@ -282,9 +272,9 @@ class MemoryEffectRepository:
 
         self._items[effect.id] = effect
         if effect.idempotency_key is not None:
-            self._idempotency[
-                (effect.idempotency_scope, effect.idempotency_key.canonical)
-            ] = effect.id
+            self._idempotency[(effect.idempotency_scope, effect.idempotency_key.canonical)] = (
+                effect.id
+            )
         return EffectReservationResult(effect=effect, created=True)
 
     async def find_by_idempotency_key(
@@ -336,15 +326,11 @@ class MemoryReconciliationRepository:
         current = self._cases.get(case.id)
         if expected_version is None:
             if current is not None:
-                raise DuplicateAggregateError(
-                    f"reconciliation case {case.id} already exists"
-                )
+                raise DuplicateAggregateError(f"reconciliation case {case.id} already exists")
             self._cases[case.id] = case
             return
         if current is None:
-            raise ConcurrencyConflictError(
-                f"reconciliation case {case.id} does not exist"
-            )
+            raise ConcurrencyConflictError(f"reconciliation case {case.id} does not exist")
         _require_cas(
             current=current.version,
             expected=expected_version,
@@ -354,9 +340,7 @@ class MemoryReconciliationRepository:
 
     async def append_evidence(self, evidence: ReconciliationEvidence) -> None:
         if evidence.id in self._evidence:
-            raise DuplicateAggregateError(
-                f"reconciliation evidence {evidence.id} already exists"
-            )
+            raise DuplicateAggregateError(f"reconciliation evidence {evidence.id} already exists")
         self._evidence[evidence.id] = evidence
 
 
@@ -380,9 +364,7 @@ class MemoryApprovalRepository:
     ) -> None:
         current = self._items.get(approval.id)
         if current is None:
-            raise ConcurrencyConflictError(
-                f"approval {approval.id} does not exist"
-            )
+            raise ConcurrencyConflictError(f"approval {approval.id} does not exist")
         _require_cas(
             current=current.version,
             expected=expected_version,
@@ -391,11 +373,7 @@ class MemoryApprovalRepository:
         self._items[approval.id] = approval
 
     async def list_pending(self) -> tuple[Approval, ...]:
-        return tuple(
-            item
-            for item in self._items.values()
-            if item.status is ApprovalStatus.PENDING
-        )
+        return tuple(item for item in self._items.values() if item.status is ApprovalStatus.PENDING)
 
 
 class MemoryLeaseRepository:
@@ -418,9 +396,7 @@ class MemoryLeaseRepository:
             and current.status is LeaseStatus.HELD
             and lease.status is LeaseStatus.HELD
         ):
-            raise ConcurrencyConflictError(
-                f"resource {lease.resource} already has an active lease"
-            )
+            raise ConcurrencyConflictError(f"resource {lease.resource} already has an active lease")
         self._items[lease.id] = lease
         self._current_by_resource[lease.resource] = lease.id
         self._fencing[lease.resource] = max(
@@ -497,9 +473,7 @@ class MemoryRuntimeRepository:
 
     async def add_binding(self, binding: RuntimeBinding) -> None:
         if binding.id in self._bindings:
-            raise DuplicateAggregateError(
-                f"runtime binding {binding.id} already exists"
-            )
+            raise DuplicateAggregateError(f"runtime binding {binding.id} already exists")
         self._bindings[binding.id] = binding
 
     async def get_invocation(
@@ -510,9 +484,7 @@ class MemoryRuntimeRepository:
 
     async def add_invocation(self, invocation: RuntimeInvocation) -> None:
         if invocation.id in self._invocations:
-            raise DuplicateAggregateError(
-                f"runtime invocation {invocation.id} already exists"
-            )
+            raise DuplicateAggregateError(f"runtime invocation {invocation.id} already exists")
         self._invocations[invocation.id] = invocation
 
     async def save_invocation(
@@ -523,9 +495,7 @@ class MemoryRuntimeRepository:
     ) -> None:
         current = self._invocations.get(invocation.id)
         if current is None:
-            raise ConcurrencyConflictError(
-                f"runtime invocation {invocation.id} does not exist"
-            )
+            raise ConcurrencyConflictError(f"runtime invocation {invocation.id} does not exist")
         _require_cas(
             current=current.version,
             expected=expected_version,
@@ -543,9 +513,7 @@ class MemoryArtifactRepository:
 
     async def add(self, artifact: Artifact) -> None:
         if artifact.id in self._items:
-            raise DuplicateAggregateError(
-                f"artifact {artifact.id} already exists"
-            )
+            raise DuplicateAggregateError(f"artifact {artifact.id} already exists")
         self._items[artifact.id] = artifact
 
 
@@ -566,9 +534,7 @@ class MemoryOutboxStore:
 
     async def append(self, event: IntegrationEvent) -> None:
         if event.event_id in self._records:
-            raise DuplicateAggregateError(
-                f"outbox event {event.event_id} already exists"
-            )
+            raise DuplicateAggregateError(f"outbox event {event.event_id} already exists")
         self._records[event.event_id] = OutboxRecord(event=event)
 
     async def claim_batch(
@@ -638,9 +604,7 @@ class MemoryInboxStore:
             self._records[key] = record
             return True
         if existing.digest != record.digest:
-            raise InboxDigestConflictError(
-                "external event id was reused with a different digest"
-            )
+            raise InboxDigestConflictError("external event id was reused with a different digest")
         return False
 
     async def get(
