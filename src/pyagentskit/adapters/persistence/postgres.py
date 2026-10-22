@@ -811,9 +811,7 @@ class PostgresV2RuntimeRepository(_PostgresRepository):
                 dumps(runtime_binding_to_document(binding)),
             )
             if row is None:
-                raise DuplicateAggregateError(
-                    f"runtime binding {binding.id} already exists"
-                )
+                raise DuplicateAggregateError(f"runtime binding {binding.id} already exists")
 
         await self._db.call(operation)
 
@@ -857,9 +855,7 @@ class PostgresV2RuntimeRepository(_PostgresRepository):
                 dumps(runtime_invocation_to_document(invocation)),
             )
             if row is None:
-                raise DuplicateAggregateError(
-                    f"runtime invocation {invocation.id} already exists"
-                )
+                raise DuplicateAggregateError(f"runtime invocation {invocation.id} already exists")
 
         await self._db.call(operation)
 
@@ -870,9 +866,7 @@ class PostgresV2RuntimeRepository(_PostgresRepository):
         expected_version: AggregateVersion,
     ) -> None:
         if invocation.version != expected_version.next():
-            raise ConcurrencyConflictError(
-                "saved aggregate version must advance by exactly one"
-            )
+            raise ConcurrencyConflictError("saved aggregate version must advance by exactly one")
         table = self._db.table("runtime_invocations")
 
         async def operation(connection: AsyncPostgresConnection) -> None:
