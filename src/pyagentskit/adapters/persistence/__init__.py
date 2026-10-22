@@ -31,6 +31,14 @@ from .postgres import (
     PostgresV2RunRepository,
     PostgresV2UnitOfWork,
 )
+from .postgres_catalog import (
+    PostgresV2ArtifactRepository,
+    PostgresV2ConversationRepository,
+    PostgresV2MessageRepository,
+    PostgresV2RuntimeRepository,
+    PostgresV2SessionRepository,
+    PostgresV2WorkerRepository,
+)
 from .sqlite import (
     SQLiteApprovalRepository,
     SQLiteAuditStore,
@@ -42,6 +50,14 @@ from .sqlite import (
     SQLiteReconciliationRepository,
     SQLiteRunRepository,
     SQLiteUnitOfWork,
+)
+from .sqlite_catalog import (
+    SQLiteArtifactRepository,
+    SQLiteConversationRepository,
+    SQLiteMessageRepository,
+    SQLiteRuntimeRepository,
+    SQLiteSessionRepository,
+    SQLiteWorkerRepository,
 )
 
 __all__ = [
@@ -63,23 +79,35 @@ __all__ = [
     "MemoryUnitOfWork",
     "MemoryWorkerRepository",
     "PostgresV2ApprovalRepository",
+    "PostgresV2ArtifactRepository",
     "PostgresV2AuditStore",
+    "PostgresV2ConversationRepository",
     "PostgresV2EffectRepository",
     "PostgresV2InboxStore",
     "PostgresV2LeaseRepository",
     "PostgresV2MemoryRepository",
+    "PostgresV2MessageRepository",
     "PostgresV2OutboxStore",
     "PostgresV2ReconciliationRepository",
     "PostgresV2RunRepository",
+    "PostgresV2RuntimeRepository",
+    "PostgresV2SessionRepository",
     "PostgresV2UnitOfWork",
+    "PostgresV2WorkerRepository",
     "SQLiteApprovalRepository",
+    "SQLiteArtifactRepository",
     "SQLiteAuditStore",
+    "SQLiteConversationRepository",
     "SQLiteEffectRepository",
     "SQLiteInboxStore",
     "SQLiteLeaseRepository",
     "SQLiteMemoryRepository",
+    "SQLiteMessageRepository",
     "SQLiteOutboxStore",
     "SQLiteReconciliationRepository",
     "SQLiteRunRepository",
+    "SQLiteRuntimeRepository",
+    "SQLiteSessionRepository",
     "SQLiteUnitOfWork",
+    "SQLiteWorkerRepository",
 ]
