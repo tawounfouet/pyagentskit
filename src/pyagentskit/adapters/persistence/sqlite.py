@@ -1092,12 +1092,25 @@ class SQLiteUnitOfWork:
     """One explicit local SQLite transaction for authoritative state + outbox."""
 
     def __init__(self, path: str | Path) -> None:
+        from .sqlite_catalog import (
+            SQLiteArtifactRepository,
+            SQLiteConversationRepository,
+            SQLiteMessageRepository,
+            SQLiteSessionRepository,
+            SQLiteWorkerRepository,
+        )
+
         self._db = _SQLiteDatabase(path)
         self.runs = SQLiteRunRepository(self._db)
+        self.sessions = SQLiteSessionRepository(self._db)
+        self.conversations = SQLiteConversationRepository(self._db)
+        self.messages = SQLiteMessageRepository(self._db)
         self.effects = SQLiteEffectRepository(self._db)
         self.memories = SQLiteMemoryRepository(self._db)
         self.reconciliations = SQLiteReconciliationRepository(self._db)
         self.approvals = SQLiteApprovalRepository(self._db)
+        self.workers = SQLiteWorkerRepository(self._db)
+        self.artifacts = SQLiteArtifactRepository(self._db)
         self.runtimes = SQLiteRuntimeRepository(self._db)
         self.outbox = SQLiteOutboxStore(self._db)
         self.audit = SQLiteAuditStore(self._db)
