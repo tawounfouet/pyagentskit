@@ -12,7 +12,8 @@ from dataclasses import dataclass, field, replace
 from datetime import datetime
 from typing import TypeVar
 
-from .effects import Effect, ReconciliationCase
+from .effects import Effect as Effect
+from .effects import ReconciliationCase as ReconciliationCase
 from .errors import InvalidTransitionError, StaleFencingTokenError
 from .lifecycle import (
     RUN_TRANSITIONS,
