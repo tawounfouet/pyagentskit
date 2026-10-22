@@ -166,7 +166,7 @@ class NativeRuntimeAdapter(AgentRuntimeAdapter):
             await self._emit(
                 execution,
                 RuntimeEventType.RUNTIME_FAILED,
-                {"error_type": type(exc).__name__, "message": str(exc)},
+                {"error_type": type(exc).__name__},
             )
         else:
             execution.status = self._status_from_result(result)
