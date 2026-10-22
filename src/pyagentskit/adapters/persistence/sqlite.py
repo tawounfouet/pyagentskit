@@ -79,7 +79,7 @@ def _from_iso(value: str | None) -> datetime | None:
 
 
 class _SQLiteDatabase:
-    schema_version = 1
+    schema_version = 2
 
     def __init__(self, path: str | Path) -> None:
         self.path = Path(path)
@@ -114,15 +114,18 @@ class _SQLiteDatabase:
         current = 0 if row is None else int(row["version"])
         if current > self.schema_version:
             raise PersistenceError("SQLite V2 schema is newer than this package")
-        if current == self.schema_version:
-            return
-        migration = (
-            files("pyagentskit.adapters.persistence.migrations.sqlite")
-            .joinpath("0001_v2_core.sql")
-            .read_text(encoding="utf-8")
-        )
+        migrations = {
+            1: "0001_v2_core.sql",
+            2: "0002_v2_catalog.sql",
+        }
         try:
-            self.connection.executescript(migration)
+            for version in range(current + 1, self.schema_version + 1):
+                migration = (
+                    files("pyagentskit.adapters.persistence.migrations.sqlite")
+                    .joinpath(migrations[version])
+                    .read_text(encoding="utf-8")
+                )
+                self.connection.executescript(migration)
         except sqlite3.Error as exc:
             raise PersistenceError("cannot migrate SQLite V2 persistence") from exc
 
