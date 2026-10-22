@@ -4,6 +4,7 @@ import shutil
 import sqlite3
 import tempfile
 import unittest
+from importlib.resources import files
 from pathlib import Path
 
 from pyagentskit.adapters.persistence import (
@@ -66,6 +67,44 @@ class SQLitePersistenceTests(unittest.IsolatedAsyncioTestCase):
             }
             self.assertIn("ux_v2_effect_idempotency", indexes)
             self.assertIn("ux_v2_active_lease_resource", indexes)
+        finally:
+            connection.close()
+
+    async def test_schema_migrates_incrementally_from_v1_to_v2(self) -> None:
+        migration_v1 = (
+            files("pyagentskit.adapters.persistence.migrations.sqlite")
+            .joinpath("0001_v2_core.sql")
+            .read_text(encoding="utf-8")
+        )
+        connection = sqlite3.connect(self.path)
+        try:
+            connection.executescript(migration_v1)
+            before = connection.execute(
+                "SELECT version FROM v2_schema_migrations "
+                "WHERE component='persistence_v2'"
+            ).fetchone()
+            self.assertEqual(before, (1,))
+        finally:
+            connection.close()
+
+        repository = SQLiteRunRepository(self.path)
+        await repository.close()
+
+        connection = sqlite3.connect(self.path)
+        try:
+            after = connection.execute(
+                "SELECT version FROM v2_schema_migrations "
+                "WHERE component='persistence_v2'"
+            ).fetchone()
+            self.assertEqual(after, (2,))
+            tables = {
+                row[0]
+                for row in connection.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"
+                )
+            }
+            self.assertIn("v2_sessions", tables)
+            self.assertIn("v2_runtime_invocations", tables)
         finally:
             connection.close()
 
