@@ -19,6 +19,18 @@ from .memory import (
     MemoryUnitOfWork,
     MemoryWorkerRepository,
 )
+from .postgres import (
+    PostgresV2ApprovalRepository,
+    PostgresV2AuditStore,
+    PostgresV2EffectRepository,
+    PostgresV2InboxStore,
+    PostgresV2LeaseRepository,
+    PostgresV2MemoryRepository,
+    PostgresV2OutboxStore,
+    PostgresV2ReconciliationRepository,
+    PostgresV2RunRepository,
+    PostgresV2UnitOfWork,
+)
 from .sqlite import (
     SQLiteApprovalRepository,
     SQLiteAuditStore,
@@ -60,4 +72,14 @@ __all__ = [
     "SQLiteReconciliationRepository",
     "SQLiteRunRepository",
     "SQLiteUnitOfWork",
+    "PostgresV2ApprovalRepository",
+    "PostgresV2AuditStore",
+    "PostgresV2EffectRepository",
+    "PostgresV2InboxStore",
+    "PostgresV2LeaseRepository",
+    "PostgresV2MemoryRepository",
+    "PostgresV2OutboxStore",
+    "PostgresV2ReconciliationRepository",
+    "PostgresV2RunRepository",
+    "PostgresV2UnitOfWork",
 ]
