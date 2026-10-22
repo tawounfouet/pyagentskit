@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
+from types import TracebackType
 from typing import Protocol, runtime_checkable
 
 from ..domain.entities import (
@@ -230,7 +231,12 @@ class UnitOfWork(Protocol):
     audit: AuditStore
 
     async def __aenter__(self) -> UnitOfWork: ...
-    async def __aexit__(self, exc_type, exc, tb) -> None: ...
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None: ...
     async def commit(self) -> None: ...
     async def rollback(self) -> None: ...
 
