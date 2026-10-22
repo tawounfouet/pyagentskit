@@ -5,7 +5,13 @@ from datetime import UTC, datetime, timedelta
 
 from pyagentskit import AgentDefinition, ModelRef, Runner
 from pyagentskit.adapters import NativeRuntimeAdapter, NativeRuntimeEngine
-from pyagentskit.application import PlanRecovery, ReconcileEffect, RuntimeRecoveryExecutor
+from pyagentskit.application import (
+    EffectExecutionGate,
+    PlanRecovery,
+    ReconcileEffect,
+    RuntimeRecoveryExecutor,
+)
+from pyagentskit.contracts import EffectReservationResult
 from pyagentskit.domain import (
     Approval,
     Effect,
@@ -54,15 +60,37 @@ from pyagentskit.testing import FakeModel
 class MemoryEffectRepository:
     def __init__(self, *effects: Effect) -> None:
         self.items = {effect.id: effect for effect in effects}
+        self.save_history = []
 
     async def get(self, effect_id):
         return self.items[effect_id]
+
+    async def reserve(self, effect):
+        if effect.idempotency_key is not None:
+            existing = await self.find_by_idempotency_key(
+                effect.idempotency_scope,
+                effect.idempotency_key,
+            )
+            if existing is not None:
+                return EffectReservationResult(effect=existing, created=False)
+        existing = self.items.get(effect.id)
+        if existing is not None:
+            return EffectReservationResult(effect=existing, created=False)
+        self.items[effect.id] = effect
+        return EffectReservationResult(effect=effect, created=True)
+
+    async def find_by_idempotency_key(self, scope, key):
+        for effect in self.items.values():
+            if effect.idempotency_scope == scope and effect.idempotency_key == key:
+                return effect
+        return None
 
     async def save(self, effect, *, expected_version):
         current = self.items[effect.id]
         if current.version != expected_version:
             raise RuntimeError("effect concurrency conflict")
         self.items[effect.id] = effect
+        self.save_history.append(effect.status)
 
 
 class MemoryReconciliationRepository:
@@ -397,6 +425,80 @@ class CrashWindowTests(unittest.TestCase):
         plan = self.planner.plan(recovery_context(effects=(succeeded,), snapshot=resumable))
         self.assertEqual(plan.next_action, NextAction.RESUME_RUNTIME)
         self.assertFalse(succeeded.safe_to_replay)
+
+
+class EffectExecutionGateTests(unittest.IsolatedAsyncioTestCase):
+    async def test_prepare_persists_started_before_external_send(self) -> None:
+        run = running_run()
+        repo = MemoryEffectRepository()
+        audit = MemoryAuditSink()
+        gate = EffectExecutionGate(effects=repo, audit=audit)
+        effect = Effect(
+            run_id=run.id,
+            kind=EffectKind("github.git_push"),
+            idempotency_key=IdempotencyKey("run", "push-main"),
+            fingerprint=InputFingerprint.from_text("sha=abc;ref=main"),
+            risk_level=EffectRiskLevel.HIGH,
+        )
+
+        prepared = await gate.prepare(
+            effect,
+            ownership=ownership_for(run),
+            protected=True,
+        )
+
+        self.assertTrue(prepared.execute)
+        self.assertFalse(prepared.reused)
+        self.assertEqual(prepared.effect.status, EffectStatus.STARTED)
+        self.assertEqual(repo.save_history, [EffectStatus.STARTED])
+        self.assertEqual(audit.events[-1].event_type, "effect.started")
+
+    async def test_existing_succeeded_effect_is_reused_without_replay(self) -> None:
+        key = IdempotencyKey("run", "publish-package")
+        fingerprint = InputFingerprint.from_text("pkg=pyagentskit;version=2.0.0a3")
+        succeeded = Effect(
+            idempotency_key=key,
+            fingerprint=fingerprint,
+        ).begin().mark_succeeded()
+        repo = MemoryEffectRepository(succeeded)
+        gate = EffectExecutionGate(effects=repo, audit=MemoryAuditSink())
+        duplicate_intent = Effect(
+            idempotency_key=key,
+            fingerprint=fingerprint,
+        )
+
+        prepared = await gate.prepare(duplicate_intent)
+
+        self.assertFalse(prepared.execute)
+        self.assertTrue(prepared.reused)
+        self.assertEqual(prepared.effect.id, succeeded.id)
+        self.assertEqual(repo.save_history, [])
+
+    async def test_started_effect_is_never_replayed_by_prepare(self) -> None:
+        key = IdempotencyKey("run", "send-email")
+        fingerprint = InputFingerprint.from_text("recipient=a@example.test")
+        started = Effect(idempotency_key=key, fingerprint=fingerprint).begin()
+        repo = MemoryEffectRepository(started)
+        gate = EffectExecutionGate(effects=repo, audit=MemoryAuditSink())
+
+        with self.assertRaises(ReconciliationError):
+            await gate.prepare(Effect(idempotency_key=key, fingerprint=fingerprint))
+
+    async def test_missing_response_is_persisted_as_unknown_not_failed(self) -> None:
+        repo = MemoryEffectRepository()
+        audit = MemoryAuditSink()
+        gate = EffectExecutionGate(effects=repo, audit=audit)
+        prepared = await gate.prepare(Effect())
+
+        unknown = await gate.mark_unknown(
+            prepared.effect,
+            reason="timeout after external send",
+        )
+
+        self.assertEqual(unknown.status, EffectStatus.UNKNOWN)
+        self.assertNotEqual(unknown.status, EffectStatus.FAILED)
+        self.assertEqual(repo.save_history[-1], EffectStatus.UNKNOWN)
+        self.assertEqual(audit.events[-1].event_type, "effect.outcome_unknown")
 
 
 class ReconciliationApplicationTests(unittest.IsolatedAsyncioTestCase):
