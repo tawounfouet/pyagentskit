@@ -725,9 +725,7 @@ class SQLiteRuntimeRepository(_SQLiteRepository):
                 (str(binding_id),),
             ).fetchone()
             return (
-                None
-                if row is None
-                else runtime_binding_from_document(loads(row["payload_json"]))
+                None if row is None else runtime_binding_from_document(loads(row["payload_json"]))
             )
 
         return await self._db.call(operation)
@@ -806,9 +804,7 @@ class SQLiteRuntimeRepository(_SQLiteRepository):
         expected_version: AggregateVersion,
     ) -> None:
         if invocation.version != expected_version.next():
-            raise ConcurrencyConflictError(
-                "saved aggregate version must advance by exactly one"
-            )
+            raise ConcurrencyConflictError("saved aggregate version must advance by exactly one")
 
         def operation() -> None:
             cursor = self._db.connection.execute(
