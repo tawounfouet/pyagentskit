@@ -27,10 +27,14 @@ ownership = OwnershipContext(
 )
 
 # Represents W3/W4: the external call may have happened, but local truth is ambiguous.
-effect = Effect(
-    run_id=run.id,
-    kind=EffectKind("demo.external_write"),
-).begin(ownership=ownership, protected=True).mark_unknown()
+effect = (
+    Effect(
+        run_id=run.id,
+        kind=EffectKind("demo.external_write"),
+    )
+    .begin(ownership=ownership, protected=True)
+    .mark_unknown()
+)
 
 context = RecoveryContext(
     run=run,
