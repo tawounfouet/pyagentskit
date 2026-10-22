@@ -19,6 +19,7 @@ from pyagentskit.adapters.persistence import (
     MemoryRunRepository,
     MemoryRuntimeRepository,
     MemorySessionRepository,
+    MemoryUnitOfWork,
     MemoryWorkerRepository,
     SQLiteApprovalRepository,
     SQLiteArtifactRepository,
@@ -34,6 +35,7 @@ from pyagentskit.adapters.persistence import (
     SQLiteRunRepository,
     SQLiteRuntimeRepository,
     SQLiteSessionRepository,
+    SQLiteUnitOfWork,
     SQLiteWorkerRepository,
 )
 from tests.persistence_contract_suite import PersistenceContractSuiteMixin
@@ -87,6 +89,9 @@ class MemoryPersistenceCommonContracts(
 
     async def make_inbox_store(self):
         return MemoryInboxStore()
+
+    async def make_unit_of_work(self):
+        return MemoryUnitOfWork()
 
 
 class SQLitePersistenceCommonContracts(
@@ -153,6 +158,9 @@ class SQLitePersistenceCommonContracts(
 
     async def make_inbox_store(self):
         return self._track(SQLiteInboxStore(self.path))
+
+    async def make_unit_of_work(self):
+        return self._track(SQLiteUnitOfWork(self.path))
 
 
 if __name__ == "__main__":
