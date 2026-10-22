@@ -219,10 +219,7 @@ class PostgresV2LiveQualification(unittest.IsolatedAsyncioTestCase):
                 self.fail("multiprocess lease worker did not terminate")
             self.assertEqual(process.exitcode, 0)
 
-        outcomes = [
-            await asyncio.to_thread(result_queue.get, True, 5)
-            for _ in processes
-        ]
+        outcomes = [await asyncio.to_thread(result_queue.get, True, 5) for _ in processes]
         self.assertCountEqual(outcomes, ["success", "conflict"])
 
         current = await leases.get_current(resource)
