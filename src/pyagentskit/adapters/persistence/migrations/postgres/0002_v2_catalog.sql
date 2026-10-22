@@ -68,8 +68,14 @@ CREATE TABLE IF NOT EXISTS __PFX___v2_runtime_invocations (
     id TEXT PRIMARY KEY,
     run_id TEXT NOT NULL,
     binding_id TEXT NOT NULL,
-    status VARCHAR(32) NOT NULL,
+    runtime_id TEXT,
+    status VARCHAR(32) NOT NULL
+        CHECK (status IN (
+            'created','starting','running','waiting','completed','failed','cancelled','unknown'
+        )),
     version BIGINT NOT NULL CHECK (version >= 0),
+    started_at TIMESTAMPTZ,
+    completed_at TIMESTAMPTZ,
     payload_json JSONB NOT NULL,
     CONSTRAINT __PFX___v2_runtime_invocations_run_fk
         FOREIGN KEY (run_id) REFERENCES __PFX___v2_runs(id)
