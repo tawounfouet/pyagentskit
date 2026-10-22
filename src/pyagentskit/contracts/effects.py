@@ -1,16 +1,27 @@
-"""Outbound ports for Effect reconciliation."""
+"""Outbound ports for Effect execution and reconciliation."""
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
 from ..domain.effects import (
     Effect,
+    IdempotencyKey,
+    IdempotencyScope,
     ReconciliationCase,
     ReconciliationEvidence,
     ReconciliationObservation,
 )
 from ..domain.shared import AggregateVersion, EffectId
+
+
+@dataclass(frozen=True, slots=True)
+class EffectReservationResult:
+    """Atomic durable-intent reservation result."""
+
+    effect: Effect
+    created: bool
 
 
 @runtime_checkable
@@ -27,6 +38,14 @@ class ReconciliationPort(Protocol):
 @runtime_checkable
 class EffectRepository(Protocol):
     async def get(self, effect_id: EffectId) -> Effect: ...
+
+    async def reserve(self, effect: Effect) -> EffectReservationResult: ...
+
+    async def find_by_idempotency_key(
+        self,
+        scope: IdempotencyScope,
+        key: IdempotencyKey,
+    ) -> Effect | None: ...
 
     async def save(
         self,
