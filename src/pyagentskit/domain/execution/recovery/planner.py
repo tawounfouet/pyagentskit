@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from ...lifecycle import ApprovalStatus, RuntimeCapability
+from ...shared import EffectId, ReconciliationCaseId, RuntimeInvocationId
 from .model import (
     NextAction,
     RecoveryBlocker,
@@ -200,9 +201,9 @@ class RecoveryPlanner:
         *,
         blockers: tuple[RecoveryBlocker, ...] = (),
         required_capabilities: frozenset[RuntimeCapability] = frozenset(),
-        target_runtime_invocation_id=None,
-        target_effect_id=None,
-        target_reconciliation_case_id=None,
+        target_runtime_invocation_id: RuntimeInvocationId | None = None,
+        target_effect_id: EffectId | None = None,
+        target_reconciliation_case_id: ReconciliationCaseId | None = None,
     ) -> RecoveryPlan:
         ownership = context.ownership if context.ownership_is_valid() else None
         return RecoveryPlan(
