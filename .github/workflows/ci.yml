@@ -103,15 +103,17 @@ jobs:
         run: |
           python -m venv /tmp/pyagentskit-clean
           /tmp/pyagentskit-clean/bin/python -m pip install --upgrade pip
-          /tmp/pyagentskit-clean/bin/pip install dist/pyagentskit-2.0.0a3-py3-none-any.whl
-          /tmp/pyagentskit-clean/bin/python -c "import pyagentskit; assert pyagentskit.__version__ == '2.0.0a3'"
+          EXPECTED_VERSION="$(python -c "import pathlib,tomllib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")"
+          WHEEL="$(ls dist/pyagentskit-*-py3-none-any.whl)"
+          /tmp/pyagentskit-clean/bin/pip install "$WHEEL"
+          EXPECTED_VERSION="$EXPECTED_VERSION" /tmp/pyagentskit-clean/bin/python -c "import os,pyagentskit; assert pyagentskit.__version__ == os.environ['EXPECTED_VERSION']"
           /tmp/pyagentskit-clean/bin/python -c "from pyagentskit.domain import Effect, ReconciliationEvidence, RecoveryPlanner; assert Effect and ReconciliationEvidence and RecoveryPlanner"
           /tmp/pyagentskit-clean/bin/python -c "from pyagentskit.application import EffectExecutionGate, ReconcileEffect, RuntimeRecoveryExecutor; assert EffectExecutionGate and ReconcileEffect and RuntimeRecoveryExecutor"
           /tmp/pyagentskit-clean/bin/pip check
       - name: Upload distributions
         uses: actions/upload-artifact@v4
         with:
-          name: pyagentskit-2.0.0a3-dist
+          name: pyagentskit-dist
           path: dist/*
           if-no-files-found: error
 
@@ -130,6 +132,6 @@ jobs:
       - name: Upload qualified release artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: pyagentskit-2.0.0a3-release-qualified
+          name: pyagentskit-release-qualified
           path: release-dist/*
           if-no-files-found: error
