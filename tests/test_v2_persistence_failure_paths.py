@@ -33,6 +33,7 @@ from pyagentskit.adapters.persistence._codec import (
 )
 from pyagentskit.contracts import InboxRecord, InboxStatus, OutboxStatus
 from pyagentskit.domain import (
+    AggregateVersion,
     Approval,
     ApprovalStatus,
     ArtifactId,
@@ -56,6 +57,7 @@ from pyagentskit.domain import (
     ReconciliationEvidence,
     ReconciliationStatus,
     Run,
+    TenantId,
     WorkerId,
 )
 
@@ -145,10 +147,7 @@ class PersistenceCodecFailurePathTests(unittest.TestCase):
         event = IntegrationEvent(
             name="effect.changed",
             payload={"status": "unknown"},
-            tenant_id=__import__(
-                "pyagentskit.domain",
-                fromlist=["TenantId"],
-            ).TenantId("tenant_42"),
+            tenant_id=TenantId("tenant_42"),
             aggregate_type="Effect",
             aggregate_id="effect_42",
         )
@@ -243,10 +242,7 @@ class SQLitePersistenceFailurePathTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(ConcurrencyConflictError):
             await repository.save(
                 missing,
-                expected_version=__import__(
-                    "pyagentskit.domain",
-                    fromlist=["AggregateVersion"],
-                ).AggregateVersion(),
+                expected_version=AggregateVersion(),
             )
 
         await repository.close()
