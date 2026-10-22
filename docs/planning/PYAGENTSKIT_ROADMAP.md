@@ -152,7 +152,7 @@ Detailed milestone specifications:
 
 # 2.0.0a1 — Domain Foundations
 
-Status: **Implemented — Qualification in progress**
+Status: **Qualified — Release pending**
 
 Goal:
 
@@ -308,7 +308,7 @@ Cancellation != rollback
 
 # 2.0.0a2 — Runtime Abstraction
 
-Status: **Implemented — Qualification in progress**
+Status: **Qualified — Release pending**
 
 Goal:
 
@@ -402,7 +402,7 @@ Reuse where valid:
 
 # 2.0.0a3 — Effects & Recovery Core
 
-Status: **Implemented — Qualification in progress**
+Status: **Qualified — Release pending**
 
 Goal:
 
