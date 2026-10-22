@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import unittest
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from pyagentskit.domain import (
@@ -23,8 +24,12 @@ from pyagentskit.domain import (
     Fingerprint,
     Lease,
     LeaseStatus,
+    MessageRecipient,
+    OwnershipContext,
     Participant,
     ReconciliationCase,
+    ReconciliationStatus,
+    ResourceIdentity,
     Run,
     RunStatus,
     RuntimeBinding,
@@ -146,6 +151,62 @@ class V2DomainFoundationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ReconciliationCase()
 
+    def test_ownership_context_is_typed_and_explicit(self) -> None:
+        lease = Lease(resource="run-1")
+        worker = WorkerId("worker-1")
+        held = lease.acquire(worker, FencingToken(1))
+        ownership = OwnershipContext(
+            worker_id=worker,
+            lease_id=held.id,
+            resource_identity=ResourceIdentity("run", "run-1"),
+            fencing_token=held.fencing_token,
+            expires_at=datetime.now(UTC) + timedelta(seconds=30),
+        )
+
+        self.assertEqual(ownership.worker_id, worker)
+        self.assertEqual(ownership.lease_id, held.id)
+        self.assertEqual(ownership.resource_identity.resource_type, "run")
+        with self.assertRaises(ValueError):
+            OwnershipContext(
+                worker_id=worker,
+                lease_id=held.id,
+                resource_identity=ResourceIdentity("run", "run-1"),
+                fencing_token=held.fencing_token,
+                expires_at=datetime.now(),
+            )
+
+    def test_message_recipient_links_message_and_actor(self) -> None:
+        actor = Actor(kind="human", label="Thomas")
+        message = ConversationMessage(actor=str(actor.id), content="hello")
+        recipient = MessageRecipient(
+            message_id=message.id,
+            actor_id=actor.id,
+            recipient_type="direct",
+        )
+
+        self.assertEqual(recipient.message_id, message.id)
+        self.assertEqual(recipient.actor_id, actor.id)
+        with self.assertRaises(ValueError):
+            MessageRecipient(
+                message_id=message.id,
+                actor_id=actor.id,
+                recipient_type="",
+            )
+
+    def test_reconciliation_lifecycle_is_explicit(self) -> None:
+        case = ReconciliationCase(reason="unknown outcome")
+        running = case.start()
+        resolved = running.resolve(
+            "provider confirms success",
+            status=ReconciliationStatus.RESOLVED_SUCCESS,
+        )
+
+        self.assertEqual(running.status, ReconciliationStatus.RUNNING)
+        self.assertTrue(resolved.resolved)
+        self.assertEqual(resolved.version.value, 2)
+        with self.assertRaises(InvalidTransitionError):
+            resolved.start()
+
     def test_worker_and_reconciliation_terminality(self) -> None:
         stopped = Worker().transition(WorkerStatus.STOPPED)
         with self.assertRaises(InvalidTransitionError):
@@ -161,13 +222,24 @@ class V2DomainFoundationTests(unittest.TestCase):
         root = Path(__file__).parents[1] / "src" / "pyagentskit" / "domain"
         forbidden = {"pyagentskit.adapters", "pyagentskit.api", "pyagentskit.compat"}
 
-        for path in root.glob("*.py"):
+        for path in root.rglob("*.py"):
             tree = ast.parse(path.read_text())
             for node in ast.walk(tree):
+                imported: set[str]
                 if isinstance(node, ast.Import):
                     imported = {alias.name for alias in node.names}
                 elif isinstance(node, ast.ImportFrom):
-                    imported = {node.module or ""}
+                    module = node.module or ""
+                    if node.level:
+                        imported = {module, f"pyagentskit.{module}" if module else "pyagentskit"}
+                    else:
+                        imported = {module}
                 else:
                     continue
-                self.assertTrue(forbidden.isdisjoint(imported), path)
+                self.assertTrue(
+                    all(
+                        not any(name == blocked or name.startswith(f"{blocked}.") for blocked in forbidden)
+                        for name in imported
+                    ),
+                    f"{path}: forbidden imports {imported & forbidden}",
+                )
