@@ -109,8 +109,7 @@ class _SQLiteDatabase:
             "(component TEXT PRIMARY KEY, version INTEGER NOT NULL)"
         )
         row = self.connection.execute(
-            "SELECT version FROM v2_schema_migrations "
-            "WHERE component='persistence_v2'"
+            "SELECT version FROM v2_schema_migrations WHERE component='persistence_v2'"
         ).fetchone()
         current = 0 if row is None else int(row["version"])
         if current > self.schema_version:
@@ -183,11 +182,7 @@ class _SQLiteDatabase:
 
 class _SQLiteRepository:
     def __init__(self, database: _SQLiteDatabase | str | Path) -> None:
-        self._db = (
-            database
-            if isinstance(database, _SQLiteDatabase)
-            else _SQLiteDatabase(database)
-        )
+        self._db = database if isinstance(database, _SQLiteDatabase) else _SQLiteDatabase(database)
 
     async def close(self) -> None:
         await self._db.close()
@@ -225,9 +220,7 @@ class SQLiteRunRepository(_SQLiteRepository):
 
     async def save(self, run: Run, *, expected_version: AggregateVersion) -> None:
         if run.version != expected_version.next():
-            raise ConcurrencyConflictError(
-                "saved aggregate version must advance by exactly one"
-            )
+            raise ConcurrencyConflictError("saved aggregate version must advance by exactly one")
 
         def operation() -> None:
             cursor = self._db.connection.execute(
@@ -345,9 +338,7 @@ class SQLiteEffectRepository(_SQLiteRepository):
         expected_version: AggregateVersion,
     ) -> None:
         if effect.version != expected_version.next():
-            raise ConcurrencyConflictError(
-                "saved aggregate version must advance by exactly one"
-            )
+            raise ConcurrencyConflictError("saved aggregate version must advance by exactly one")
 
         def operation() -> None:
             cursor = self._db.connection.execute(
@@ -364,9 +355,7 @@ class SQLiteEffectRepository(_SQLiteRepository):
                 ),
             )
             if cursor.rowcount != 1:
-                raise ConcurrencyConflictError(
-                    f"stale or missing effect {effect.id}"
-                )
+                raise ConcurrencyConflictError(f"stale or missing effect {effect.id}")
 
         await self._db.call(operation)
 
@@ -400,9 +389,7 @@ class SQLiteMemoryRepository(_SQLiteRepository):
                     ),
                 )
             except sqlite3.IntegrityError as exc:
-                raise DuplicateAggregateError(
-                    f"memory entry {entry.id} already exists"
-                ) from exc
+                raise DuplicateAggregateError(f"memory entry {entry.id} already exists") from exc
 
         await self._db.call(operation)
 
@@ -413,9 +400,7 @@ class SQLiteMemoryRepository(_SQLiteRepository):
         expected_version: AggregateVersion,
     ) -> None:
         if entry.version != expected_version.next():
-            raise ConcurrencyConflictError(
-                "saved aggregate version must advance by exactly one"
-            )
+            raise ConcurrencyConflictError("saved aggregate version must advance by exactly one")
 
         def operation() -> None:
             cursor = self._db.connection.execute(
@@ -433,9 +418,7 @@ class SQLiteMemoryRepository(_SQLiteRepository):
                 ),
             )
             if cursor.rowcount != 1:
-                raise ConcurrencyConflictError(
-                    f"stale or missing memory entry {entry.id}"
-                )
+                raise ConcurrencyConflictError(f"stale or missing memory entry {entry.id}")
 
         await self._db.call(operation)
 
@@ -459,9 +442,7 @@ class SQLiteMemoryRepository(_SQLiteRepository):
                     "WHERE tenant_id=? AND scope=? AND scope_id=? ORDER BY id",
                     (tenant_id, scope, scope_id),
                 ).fetchall()
-            return tuple(
-                memory_from_document(loads(row["payload_json"])) for row in rows
-            )
+            return tuple(memory_from_document(loads(row["payload_json"])) for row in rows)
 
         return await self._db.call(operation)
 
@@ -490,6 +471,7 @@ class SQLiteReconciliationRepository(_SQLiteRepository):
         expected_version: AggregateVersion | None,
     ) -> None:
         if expected_version is None:
+
             def insert() -> None:
                 try:
                     self._db.connection.execute(
@@ -514,9 +496,7 @@ class SQLiteReconciliationRepository(_SQLiteRepository):
             return
 
         if case.version != expected_version.next():
-            raise ConcurrencyConflictError(
-                "saved aggregate version must advance by exactly one"
-            )
+            raise ConcurrencyConflictError("saved aggregate version must advance by exactly one")
 
         def update() -> None:
             cursor = self._db.connection.execute(
@@ -533,9 +513,7 @@ class SQLiteReconciliationRepository(_SQLiteRepository):
                 ),
             )
             if cursor.rowcount != 1:
-                raise ConcurrencyConflictError(
-                    f"stale or missing reconciliation case {case.id}"
-                )
+                raise ConcurrencyConflictError(f"stale or missing reconciliation case {case.id}")
 
         await self._db.call(update)
 
@@ -568,11 +546,7 @@ class SQLiteApprovalRepository(_SQLiteRepository):
                 "SELECT payload_json FROM v2_approvals WHERE id=?",
                 (str(approval_id),),
             ).fetchone()
-            return (
-                None
-                if row is None
-                else approval_from_document(loads(row["payload_json"]))
-            )
+            return None if row is None else approval_from_document(loads(row["payload_json"]))
 
         return await self._db.call(operation)
 
@@ -590,9 +564,7 @@ class SQLiteApprovalRepository(_SQLiteRepository):
                     ),
                 )
             except sqlite3.IntegrityError as exc:
-                raise DuplicateAggregateError(
-                    f"approval {approval.id} already exists"
-                ) from exc
+                raise DuplicateAggregateError(f"approval {approval.id} already exists") from exc
 
         await self._db.call(operation)
 
@@ -603,9 +575,7 @@ class SQLiteApprovalRepository(_SQLiteRepository):
         expected_version: AggregateVersion,
     ) -> None:
         if approval.version != expected_version.next():
-            raise ConcurrencyConflictError(
-                "saved aggregate version must advance by exactly one"
-            )
+            raise ConcurrencyConflictError("saved aggregate version must advance by exactly one")
 
         def operation() -> None:
             cursor = self._db.connection.execute(
@@ -620,9 +590,7 @@ class SQLiteApprovalRepository(_SQLiteRepository):
                 ),
             )
             if cursor.rowcount != 1:
-                raise ConcurrencyConflictError(
-                    f"stale or missing approval {approval.id}"
-                )
+                raise ConcurrencyConflictError(f"stale or missing approval {approval.id}")
 
         await self._db.call(operation)
 
@@ -632,9 +600,7 @@ class SQLiteApprovalRepository(_SQLiteRepository):
                 "SELECT payload_json FROM v2_approvals WHERE status=? ORDER BY id",
                 (ApprovalStatus.PENDING.value,),
             ).fetchall()
-            return tuple(
-                approval_from_document(loads(row["payload_json"])) for row in rows
-            )
+            return tuple(approval_from_document(loads(row["payload_json"])) for row in rows)
 
         return await self._db.call(operation)
 
@@ -674,9 +640,7 @@ class SQLiteLeaseRepository(_SQLiteRepository):
                     (str(lease.id),),
                 ).fetchone()
                 if existing is not None:
-                    raise DuplicateAggregateError(
-                        f"lease {lease.id} already exists"
-                    ) from exc
+                    raise DuplicateAggregateError(f"lease {lease.id} already exists") from exc
                 raise ConcurrencyConflictError(
                     f"resource {lease.resource} already has an active lease"
                 ) from exc
@@ -690,9 +654,7 @@ class SQLiteLeaseRepository(_SQLiteRepository):
         expected_version: AggregateVersion,
     ) -> None:
         if lease.version != expected_version.next():
-            raise ConcurrencyConflictError(
-                "saved aggregate version must advance by exactly one"
-            )
+            raise ConcurrencyConflictError("saved aggregate version must advance by exactly one")
 
         def operation() -> None:
             try:
@@ -716,9 +678,7 @@ class SQLiteLeaseRepository(_SQLiteRepository):
                     f"resource {lease.resource} already has an active lease"
                 ) from exc
             if cursor.rowcount != 1:
-                raise ConcurrencyConflictError(
-                    f"stale or missing lease {lease.id}"
-                )
+                raise ConcurrencyConflictError(f"stale or missing lease {lease.id}")
 
         await self._db.call(operation)
 
@@ -752,22 +712,17 @@ class SQLiteAuditStore(_SQLiteRepository):
                     ),
                 )
             except sqlite3.IntegrityError as exc:
-                raise DuplicateAggregateError(
-                    f"audit event {event.id} already exists"
-                ) from exc
+                raise DuplicateAggregateError(f"audit event {event.id} already exists") from exc
 
         await self._db.call(operation)
 
     async def list_for_subject(self, subject: str) -> tuple[AuditEvent, ...]:
         def operation() -> tuple[AuditEvent, ...]:
             rows = self._db.connection.execute(
-                "SELECT payload_json FROM v2_audit_events "
-                "WHERE subject=? ORDER BY occurred_at, id",
+                "SELECT payload_json FROM v2_audit_events WHERE subject=? ORDER BY occurred_at, id",
                 (subject,),
             ).fetchall()
-            return tuple(
-                audit_from_document(loads(row["payload_json"])) for row in rows
-            )
+            return tuple(audit_from_document(loads(row["payload_json"])) for row in rows)
 
         return await self._db.call(operation)
 
@@ -841,9 +796,7 @@ class SQLiteOutboxStore(_SQLiteRepository):
                 )
                 records.append(
                     OutboxRecord(
-                        event=integration_event_from_document(
-                            loads(row["event_json"])
-                        ),
+                        event=integration_event_from_document(loads(row["event_json"])),
                         status=OutboxStatus.CLAIMED,
                         attempt_count=attempts,
                         next_attempt_at=_from_iso(row["next_attempt_at"]),
@@ -920,8 +873,7 @@ class SQLiteInboxStore(_SQLiteRepository):
                 return True
             except sqlite3.IntegrityError:
                 row = self._db.connection.execute(
-                    "SELECT digest FROM v2_inbox_events "
-                    "WHERE source=? AND external_event_id=?",
+                    "SELECT digest FROM v2_inbox_events WHERE source=? AND external_event_id=?",
                     (record.source, record.external_event_id),
                 ).fetchone()
                 if row is None:
