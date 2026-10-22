@@ -5,6 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import replace
 from datetime import UTC, datetime
+from types import TracebackType
 
 from ...contracts.effects import EffectReservationResult
 from ...contracts.persistence import (
@@ -27,6 +28,8 @@ from ...domain.entities import (
     Conversation,
     ConversationMessage,
     Lease,
+    MemoryEntry,
+    MemoryScope,
     Run,
     RuntimeBinding,
     RuntimeInvocation,
@@ -43,10 +46,15 @@ from ...domain.lifecycle import ApprovalStatus, LeaseStatus, RunStatus
 from ...domain.shared import (
     AggregateVersion,
     ApprovalId,
+    FencingToken,
     ArtifactId,
     ConversationId,
     EffectId,
+    LeaseId,
+    MemoryEntryId,
     MessageId,
+    ReconciliationCaseId,
+    ReconciliationEvidenceId,
     RunId,
     RuntimeBindingId,
     RuntimeInvocationId,
@@ -126,6 +134,52 @@ class MemorySessionRepository:
             new=session.version,
         )
         self._items[session.id] = session
+
+
+class MemoryMemoryRepository:
+    def __init__(self) -> None:
+        self._items: dict[MemoryEntryId, MemoryEntry] = {}
+
+    async def get(self, memory_id: MemoryEntryId) -> MemoryEntry | None:
+        return self._items.get(memory_id)
+
+    async def put(self, entry: MemoryEntry) -> None:
+        if entry.id in self._items:
+            raise DuplicateAggregateError(f"memory entry {entry.id} already exists")
+        self._items[entry.id] = entry
+
+    async def save(
+        self,
+        entry: MemoryEntry,
+        *,
+        expected_version: AggregateVersion,
+    ) -> None:
+        current = self._items.get(entry.id)
+        if current is None:
+            raise ConcurrencyConflictError(
+                f"memory entry {entry.id} does not exist"
+            )
+        _require_cas(
+            current=current.version,
+            expected=expected_version,
+            new=entry.version,
+        )
+        self._items[entry.id] = entry
+
+    async def list_by_scope(
+        self,
+        *,
+        tenant_id: str,
+        scope: str,
+        scope_id: str | None,
+    ) -> tuple[MemoryEntry, ...]:
+        return tuple(
+            item
+            for item in self._items.values()
+            if str(item.tenant_id) == tenant_id
+            and item.scope.value == scope
+            and item.scope_id == scope_id
+        )
 
 
 class MemoryConversationRepository:
@@ -261,8 +315,8 @@ class MemoryEffectRepository:
 
 class MemoryReconciliationRepository:
     def __init__(self) -> None:
-        self._cases: dict[object, ReconciliationCase] = {}
-        self._evidence: dict[object, ReconciliationEvidence] = {}
+        self._cases: dict[ReconciliationCaseId, ReconciliationCase] = {}
+        self._evidence: dict[ReconciliationEvidenceId, ReconciliationEvidence] = {}
 
     async def get_active(self, effect_id: EffectId) -> ReconciliationCase | None:
         candidates = [
@@ -347,8 +401,8 @@ class MemoryApprovalRepository:
 
 class MemoryLeaseRepository:
     def __init__(self) -> None:
-        self._items: dict[object, Lease] = {}
-        self._current_by_resource: dict[str, object] = {}
+        self._items: dict[LeaseId, Lease] = {}
+        self._current_by_resource: dict[str, LeaseId] = {}
         self._fencing: dict[str, int] = {}
 
     async def get_current(self, resource: str) -> Lease | None:
@@ -396,10 +450,10 @@ class MemoryLeaseRepository:
             lease.fencing_token.value,
         )
 
-    async def next_fencing_token(self, resource: str) -> int:
+    async def next_fencing_token(self, resource: str) -> FencingToken:
         token = self._fencing.get(resource, 0) + 1
         self._fencing[resource] = token
-        return token
+        return FencingToken(token)
 
 
 class MemoryWorkerRepository:
@@ -648,6 +702,7 @@ class MemoryUnitOfWork:
     def __init__(self) -> None:
         self.runs = MemoryRunRepository()
         self.effects = MemoryEffectRepository()
+        self.memories = MemoryMemoryRepository()
         self.reconciliations = MemoryReconciliationRepository()
         self.approvals = MemoryApprovalRepository()
         self.outbox = MemoryOutboxStore()
@@ -661,6 +716,7 @@ class MemoryUnitOfWork:
             deepcopy(self.runs._items),
             deepcopy(self.effects._items),
             deepcopy(self.effects._idempotency),
+            deepcopy(self.memories._items),
             deepcopy(self.reconciliations._cases),
             deepcopy(self.reconciliations._evidence),
             deepcopy(self.approvals._items),
@@ -669,7 +725,12 @@ class MemoryUnitOfWork:
         )
         return self
 
-    async def __aexit__(self, exc_type, exc, tb) -> None:
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
         if exc_type is not None or not self._committed:
             await self.rollback()
 
@@ -684,6 +745,7 @@ class MemoryUnitOfWork:
             self.runs._items,
             self.effects._items,
             self.effects._idempotency,
+            self.memories._items,
             self.reconciliations._cases,
             self.reconciliations._evidence,
             self.approvals._items,
@@ -702,6 +764,7 @@ __all__ = [
     "MemoryEffectRepository",
     "MemoryInboxStore",
     "MemoryLeaseRepository",
+    "MemoryMemoryRepository",
     "MemoryMessageRepository",
     "MemoryOutboxStore",
     "MemoryReconciliationRepository",
