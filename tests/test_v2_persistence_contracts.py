@@ -232,9 +232,7 @@ class OutboxInboxContractTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(await inbox.reserve(record))
 
         with self.assertRaises(InboxDigestConflictError):
-            await inbox.reserve(
-                replace(record, digest="b" * 64)
-            )
+            await inbox.reserve(replace(record, digest="b" * 64))
 
         await inbox.mark_processed(record.source, record.external_event_id)
         stored = await inbox.get(record.source, record.external_event_id)
