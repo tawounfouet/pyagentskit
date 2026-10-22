@@ -947,12 +947,19 @@ Objet possible :
 
 ```text
 preferred_runtime_ids
-prefer_native
 prefer_highest_qualification
 prefer_full_control
 cost_weight
 latency_weight
 ```
+
+---
+
+
+La policy ne contient aucun traitement spécial du runtime natif. Une préférence pour un runtime
+first-party ou opérateur est exprimée uniquement via `preferred_runtime_ids` ou une configuration
+générique équivalente ; le `CapabilityNegotiator` ne branche jamais sur une marque/runtime family
+concrète.
 
 ---
 
