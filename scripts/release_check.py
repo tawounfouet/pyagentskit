@@ -187,8 +187,13 @@ def smoke_install(wheel: Path) -> None:
             "assert DistributedExecutionPolicy().max_renewals > 0; "
             "assert DistributedMetricsSink and DistributedWorkerController; "
             "assert JsonLinesDistributedEventSink; "
-            "from pyagentskit.domain import Run, RunStatus; "
-            "assert Run().transition(RunStatus.RUNNING).status is RunStatus.RUNNING"
+            "from pyagentskit.domain import (Effect, ReconciliationEvidence, RecoveryPlanner, "
+            "Run, RunStatus); "
+            "from pyagentskit.application import (EffectExecutionGate, ReconcileEffect, "
+            "RuntimeRecoveryExecutor); "
+            "assert Run().transition(RunStatus.RUNNING).status is RunStatus.RUNNING; "
+            "assert Effect and ReconciliationEvidence and RecoveryPlanner; "
+            "assert EffectExecutionGate and ReconcileEffect and RuntimeRecoveryExecutor"
         )
         run(str(python), "-c", probe, cwd=target)
         run(str(python), "-m", "pyagentskit", "--version", cwd=target)
@@ -203,13 +208,14 @@ def smoke_install(wheel: Path) -> None:
         run(str(python), str(ROOT / "examples" / "retry_agent.py"), cwd=target)
         run(str(python), str(ROOT / "examples" / "distributed_coordination.py"), cwd=target)
         run(str(python), str(ROOT / "examples" / "distributed_durable_agent.py"), cwd=target)
+        run(str(python), str(ROOT / "examples" / "v2_effect_recovery.py"), cwd=target)
 
 
 def main() -> None:
     verify_versions()
     verify_secret_hygiene()
     run(sys.executable, "-m", "ruff", "check", ".")
-    run(sys.executable, "-m", "ruff", "format", "--check", "src", "tests", "scripts")
+    run(sys.executable, "-m", "ruff", "format", "--check", "src", "tests", "scripts", "examples")
     run(sys.executable, "-m", "mypy", "src")
     run(sys.executable, "-m", "compileall", "-q", "src")
     run(
