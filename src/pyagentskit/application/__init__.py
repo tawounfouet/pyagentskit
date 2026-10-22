@@ -1,6 +1,6 @@
 """V2 application use cases and ports."""
 
-from .effects import ReconcileEffect, ReconcileEffectResult
+from .effects import EffectExecutionGate, EffectPreparation, ReconcileEffect, ReconcileEffectResult
 from .execution import PlanRecovery, RuntimeRecoveryExecutor
 from .runtime import (
     AgentRuntimeAdapter,
@@ -15,6 +15,8 @@ from .runtime import (
 __all__ = [
     "AgentRuntimeAdapter",
     "CapabilityNegotiator",
+    "EffectExecutionGate",
+    "EffectPreparation",
     "InMemoryRuntimeRegistry",
     "NegotiationResult",
     "PlanRecovery",
