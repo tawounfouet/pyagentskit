@@ -425,34 +425,24 @@ def runtime_binding_from_document(document: Mapping[str, Any]) -> RuntimeBinding
         id=RuntimeBindingId(str(document["id"])),
         runtime_name=str(document.get("runtime_name") or ""),
         capabilities=frozenset(
-            RuntimeCapability(str(value))
-            for value in document.get("capabilities", ())
+            RuntimeCapability(str(value)) for value in document.get("capabilities", ())
         ),
         run_id=None if run_id is None else RunId(str(run_id)),
         runtime_id=None if document.get("runtime_id") is None else str(document["runtime_id"]),
         runtime_family=(
-            None
-            if document.get("runtime_family") is None
-            else str(document["runtime_family"])
+            None if document.get("runtime_family") is None else str(document["runtime_family"])
         ),
         adapter_version=(
-            None
-            if document.get("adapter_version") is None
-            else str(document["adapter_version"])
+            None if document.get("adapter_version") is None else str(document["adapter_version"])
         ),
         runtime_version=(
-            None
-            if document.get("runtime_version") is None
-            else str(document["runtime_version"])
+            None if document.get("runtime_version") is None else str(document["runtime_version"])
         ),
         contract_version=(
-            None
-            if document.get("contract_version") is None
-            else str(document["contract_version"])
+            None if document.get("contract_version") is None else str(document["contract_version"])
         ),
         required_capabilities=frozenset(
-            RuntimeCapability(str(value))
-            for value in document.get("required_capabilities", ())
+            RuntimeCapability(str(value)) for value in document.get("required_capabilities", ())
         ),
         selected_capabilities=(
             None
@@ -462,9 +452,7 @@ def runtime_binding_from_document(document: Mapping[str, Any]) -> RuntimeBinding
         side_effect_control_level=SideEffectControlLevel(
             int(document["side_effect_control_level"])
         ),
-        qualification_level=RuntimeQualificationLevel(
-            int(document["qualification_level"])
-        ),
+        qualification_level=RuntimeQualificationLevel(int(document["qualification_level"])),
         configuration_ref=(
             None
             if document.get("configuration_ref") is None
@@ -497,9 +485,7 @@ def runtime_invocation_to_document(invocation: RuntimeInvocation) -> dict[str, o
             None if invocation.started_at is None else invocation.started_at.isoformat()
         ),
         "completed_at": (
-            None
-            if invocation.completed_at is None
-            else invocation.completed_at.isoformat()
+            None if invocation.completed_at is None else invocation.completed_at.isoformat()
         ),
         "parent_invocation_id": (
             None
@@ -536,13 +522,9 @@ def runtime_invocation_from_document(
         handle=handle,
         started_at=_datetime(document.get("started_at")),
         completed_at=_datetime(document.get("completed_at")),
-        parent_invocation_id=(
-            None if parent is None else RuntimeInvocationId(str(parent))
-        ),
+        parent_invocation_id=(None if parent is None else RuntimeInvocationId(str(parent))),
         restart_reason=(
-            None
-            if document.get("restart_reason") is None
-            else str(document["restart_reason"])
+            None if document.get("restart_reason") is None else str(document["restart_reason"])
         ),
         checkpoint_origin=(
             None
