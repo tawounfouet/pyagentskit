@@ -1,5 +1,47 @@
 # Changelog
 
+## [2.0.0a3] - 2026-10-22
+
+### Added
+
+- Added the V2 Effect lifecycle with explicit durable intent, idempotency identity, input
+  fingerprints, risk classification, external references and fencing capture.
+- Added a pre-send `EffectExecutionGate` that reserves intent, persists `STARTED`, prevents
+  implicit replay and records `UNKNOWN` when an external result is ambiguous.
+- Added `ReconciliationCase`, typed reconciliation evidence, strategies, confidence levels and
+  the provider-neutral `ReconciliationPort`.
+- Added the pure deterministic `RecoveryPlanner`, `RecoveryContext`, ownership-bound
+  `RecoveryPlan`, blockers and canonical recovery actions.
+- Added application recovery orchestration with stale-plan revalidation and audit events.
+- Added executable W1-W5 crash-window tests and Native runtime restart qualification behind the
+  recovery gate.
+
+### Changed
+
+- `EffectStatus.UNKNOWN` is explicitly non-terminal and must progress through reconciliation
+  before a dangerous retry.
+- `ReconciliationStatus.MANUAL_REVIEW` remains an unresolved safe state rather than being treated
+  as a terminal success/failure.
+- The package version and Native adapter version are now `2.0.0a3`.
+- Package metadata correctly identifies the V2 release as Alpha.
+
+### Safety
+
+- `SUCCEEDED` Effects cannot be implicitly replayed.
+- A missing external response is persisted as `UNKNOWN`, never silently collapsed to `FAILED`.
+- Protected Effects require non-expired ownership before crossing the external-send boundary.
+- Recovery plans are bound to lease/fencing generation and rejected after takeover.
+- Reconciliation persists its durable state before provider observation and never resends the
+  original Effect.
+
+### Not Included
+
+- Production V2 repository implementations and transactional Unit of Work remain in
+  `2.0.0a4 — Persistence V2`.
+- External provider/runtime connectors remain later milestones.
+- Native `TOOL_INTERCEPTION`, `RESUME` and `NATIVE_CHECKPOINT` are not advertised until their
+  V2 contracts are independently demonstrated.
+
 ## [2.0.0a2] - 2026-10-22
 
 ### Added

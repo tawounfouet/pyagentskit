@@ -152,7 +152,7 @@ Detailed milestone specifications:
 
 # 2.0.0a1 — Domain Foundations
 
-Status: **Implemented — Qualification in progress**
+Status: **Qualified — Release pending**
 
 Goal:
 
@@ -308,7 +308,7 @@ Cancellation != rollback
 
 # 2.0.0a2 — Runtime Abstraction
 
-Status: **Implemented — Qualification in progress**
+Status: **Qualified — Release pending**
 
 Goal:
 
@@ -402,7 +402,7 @@ Reuse where valid:
 
 # 2.0.0a3 — Effects & Recovery Core
 
-Status: **Next**
+Status: **Qualified — Release pending**
 
 Goal:
 
@@ -487,7 +487,7 @@ authority
 
 # 2.0.0a4 — Persistence V2
 
-Status: **Planned**
+Status: **Next**
 
 Goal:
 
@@ -944,74 +944,68 @@ DOMAIN
 
 # Immediate Next Steps
 
-The next implementation work should happen in this order:
+The V2 foundation through `2.0.0a3` is now implemented and qualified. The next implementation work is:
 
 ```text
-1. Freeze V1.6 public behavior
-2. Resolve only blocking ADRs
-3. Scaffold V2 package topology
-4. Add architecture dependency checks
-5. Implement Shared Kernel
-6. Implement Run state machine
-7. Implement Effect state machine
-8. Implement Approval state machine
-9. Implement Lease/Fencing primitives
-10. Implement Conversation model
-11. Implement RuntimeBinding / RuntimeInvocation
-12. Implement Artifact / Audit foundations
-13. Add property/state-machine tests
-14. Build package
-15. Release 2.0.0a1
+1. Merge the qualified 2.0.0a3 branch into main.
+2. Create tag v2.0.0a3 and publish the GitHub release.
+3. Start 2.0.0a4 — Persistence V2 from the tagged A3 baseline.
+4. Define V2 repository contracts for Run / Session / Conversation / Effect / Reconciliation / Approval / Lease / Artifact.
+5. Introduce explicit UnitOfWork boundaries for local transactions.
+6. Implement in-memory reference repositories for contract qualification.
+7. Add SQLite V2 persistence only where it remains useful for local/dev compatibility.
+8. Implement PostgreSQL V2 repositories with optimistic concurrency and monotonic fencing.
+9. Persist RuntimeBinding / RuntimeInvocation / Reconciliation evidence as first-class V2 records.
+10. Add transactional Outbox / Inbox and distinguish messaging dedup from Effect idempotency.
+11. Run repository contract tests across supported implementations.
+12. Add multi-process PostgreSQL qualification and stale-writer/fencing tests.
+13. Build, fresh-install and qualify 2.0.0a4.
 ```
+
+A3 leaves one explicit capability limitation intentionally unresolved: the Native runtime does not advertise `TOOL_INTERCEPTION`; its V1 tool loop remains `BOUNDED` until a V2 interception contract is implemented and demonstrated.
 
 ---
 
-# First Implementation Sprint
+# Next Implementation Sprint — 2.0.0a4 Persistence V2
 
 ## Goal
 
-> Create a production-quality V2 Domain skeleton with enforceable architecture rules.
+> Persist V2 reliability semantics with explicit repository contracts, local transaction boundaries and production-grade concurrency guarantees.
 
-## Tasks
+## Priority tasks
 
 ```text
-[ ] Create V2 package directories
-[ ] Add canonical identifiers
-[ ] Add aggregate version primitive
-[ ] Add Fingerprint
-[ ] Add FencingToken
-[ ] Add ExternalReference
-[ ] Add canonical domain errors
-[ ] Implement Run
-[ ] Implement Effect
-[ ] Implement Approval
-[ ] Implement Lease
-[ ] Implement OwnershipContext
-[ ] Implement Session / Conversation separation
-[ ] Implement RuntimeBinding
-[ ] Implement RuntimeInvocation
-[ ] Implement Artifact
-[ ] Implement AuditEvent
-[ ] Add architecture checks
-[ ] Add unit tests
-[ ] Add property tests
-[ ] Build wheel
-[ ] Build sdist
-[ ] Fresh-environment install test
+[ ] Define repository protocols from the canonical V2 persistence spec
+[ ] Define UnitOfWork
+[ ] Implement reference in-memory repositories
+[ ] Map Effect + Reconciliation with optimistic concurrency
+[ ] Map Run + RuntimeBinding + RuntimeInvocation
+[ ] Map Approval + Lease/Fencing
+[ ] Map Conversation / Message / Recipient
+[ ] Map Artifact / Audit foundations
+[ ] Add Outbox / Inbox
+[ ] Add repository contract suite
+[ ] Add PostgreSQL implementation
+[ ] Add PostgreSQL multi-process tests
+[ ] Prove fencing monotonicity under concurrent writers
+[ ] Prove no external I/O inside long DB transactions
+[ ] Build wheel / sdist
+[ ] Fresh-install qualification
 ```
 
 ## Definition of Done
 
 ```text
-[ ] Domain imports no infrastructure
-[ ] P0 state machines pass
-[ ] P0 invalid transitions pass
-[ ] Architecture checks pass
-[ ] Type checking passes
-[ ] Linting passes
-[ ] Package builds
-[ ] Fresh import succeeds
-[ ] Version is 2.0.0a1
+[ ] Repository contracts are adapter-neutral
+[ ] Optimistic concurrency is enforced
+[ ] Fencing is monotonic
+[ ] Effect truth survives process crashes
+[ ] Reconciliation evidence is durable
+[ ] RuntimeBinding is durable and immutable by silent recovery
+[ ] Outbox / Inbox are transactional
+[ ] PostgreSQL contract tests pass
+[ ] Package / fresh install / CI are green
+[ ] Version is 2.0.0a4
 ```
 
 ---

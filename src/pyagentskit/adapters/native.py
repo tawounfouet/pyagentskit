@@ -68,7 +68,7 @@ class NativeRuntimeAdapter(AgentRuntimeAdapter):
         self,
         engine: NativeRuntimeEngine,
         *,
-        adapter_version: str = "2.0.0a2",
+        adapter_version: str = "2.0.0a3",
         runtime_version: str | None = None,
         qualification_level: RuntimeQualificationLevel = RuntimeQualificationLevel.L1,
     ) -> None:
@@ -166,7 +166,7 @@ class NativeRuntimeAdapter(AgentRuntimeAdapter):
             await self._emit(
                 execution,
                 RuntimeEventType.RUNTIME_FAILED,
-                {"error_type": type(exc).__name__, "message": str(exc)},
+                {"error_type": type(exc).__name__},
             )
         else:
             execution.status = self._status_from_result(result)

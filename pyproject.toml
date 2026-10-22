@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pyagentskit"
-version = "2.0.0a2"
+version = "2.0.0a3"
 description = "A typed, observable, provider-neutral runtime foundation for Python AI agents."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -15,7 +15,7 @@ authors = [
 ]
 keywords = ["agents", "ai", "llm", "python", "tool-calling"]
 classifiers = [
-  "Development Status :: 5 - Production/Stable",
+  "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
   "License :: OSI Approved :: Apache Software License",
   "Programming Language :: Python :: 3",
@@ -48,6 +48,7 @@ production-stores = [
 dev = [
   "httpx>=0.27,<1",
   "hypothesis>=6.120,<7",
+  "hatchling>=1.27,<1.30",
   "build>=1.2,<2",
   "mypy>=1.15,<2",
   "pytest>=8.3,<9",

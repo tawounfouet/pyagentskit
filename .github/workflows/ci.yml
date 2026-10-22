@@ -26,7 +26,7 @@ jobs:
       - name: Lint
         run: python -m ruff check .
       - name: Format
-        run: python -m ruff format --check src tests scripts
+        run: python -m ruff format --check src tests scripts examples
       - name: Typecheck
         run: python -m mypy src
       - name: Compile
@@ -68,13 +68,33 @@ jobs:
         run: |
           python -m venv /tmp/pyagentskit-clean
           /tmp/pyagentskit-clean/bin/python -m pip install --upgrade pip
-          /tmp/pyagentskit-clean/bin/pip install dist/pyagentskit-2.0.0a2-py3-none-any.whl
-          /tmp/pyagentskit-clean/bin/python -c "import pyagentskit; assert pyagentskit.__version__ == '2.0.0a2'"
-          /tmp/pyagentskit-clean/bin/python -c "from pyagentskit.domain import OwnershipContext, MessageRecipient; assert OwnershipContext and MessageRecipient"
+          /tmp/pyagentskit-clean/bin/pip install dist/pyagentskit-2.0.0a3-py3-none-any.whl
+          /tmp/pyagentskit-clean/bin/python -c "import pyagentskit; assert pyagentskit.__version__ == '2.0.0a3'"
+          /tmp/pyagentskit-clean/bin/python -c "from pyagentskit.domain import Effect, ReconciliationEvidence, RecoveryPlanner; assert Effect and ReconciliationEvidence and RecoveryPlanner"
+          /tmp/pyagentskit-clean/bin/python -c "from pyagentskit.application import EffectExecutionGate, ReconcileEffect, RuntimeRecoveryExecutor; assert EffectExecutionGate and ReconcileEffect and RuntimeRecoveryExecutor"
           /tmp/pyagentskit-clean/bin/pip check
       - name: Upload distributions
         uses: actions/upload-artifact@v4
         with:
-          name: pyagentskit-2.0.0a2-dist
+          name: pyagentskit-2.0.0a3-dist
           path: dist/*
+          if-no-files-found: error
+
+  release-qualification:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install release dependencies
+        run: python -m pip install -e ".[dev]"
+      - name: Reproducible release qualification
+        run: python scripts/release_check.py
+      - name: Upload qualified release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pyagentskit-2.0.0a3-release-qualified
+          path: release-dist/*
           if-no-files-found: error

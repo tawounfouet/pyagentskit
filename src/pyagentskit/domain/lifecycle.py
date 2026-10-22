@@ -23,10 +23,11 @@ class EffectStatus(StrEnum):
     SUCCEEDED = "succeeded"
     FAILED = "failed"
     UNKNOWN = "unknown"
+    RECONCILIATION_REQUIRED = "reconciliation_required"
 
     @property
     def is_terminal(self) -> bool:
-        return self in {self.SUCCEEDED, self.FAILED, self.UNKNOWN}
+        return self in {self.SUCCEEDED, self.FAILED}
 
 
 class ApprovalStatus(StrEnum):
@@ -74,8 +75,6 @@ class ReconciliationStatus(StrEnum):
         return self in {
             self.RESOLVED_SUCCESS,
             self.RESOLVED_FAILURE,
-            self.MANUAL_REVIEW,
-            self.FAILED,
         }
 
 
@@ -124,9 +123,14 @@ EFFECT_TRANSITIONS = {
         EffectStatus.FAILED,
         EffectStatus.UNKNOWN,
     },
+    EffectStatus.UNKNOWN: {EffectStatus.RECONCILIATION_REQUIRED},
+    EffectStatus.RECONCILIATION_REQUIRED: {
+        EffectStatus.RECONCILIATION_REQUIRED,
+        EffectStatus.SUCCEEDED,
+        EffectStatus.FAILED,
+    },
     EffectStatus.SUCCEEDED: set(),
     EffectStatus.FAILED: set(),
-    EffectStatus.UNKNOWN: set(),
 }
 
 WORKER_TRANSITIONS = {

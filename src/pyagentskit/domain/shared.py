@@ -90,6 +90,14 @@ class ReconciliationCaseId(Identifier):
     pass
 
 
+class ReconciliationEvidenceId(Identifier):
+    pass
+
+
+class RecoveryDecisionId(Identifier):
+    pass
+
+
 class AuditEventId(Identifier):
     pass
 
@@ -130,7 +138,7 @@ class Fingerprint:
             raise ValueError("fingerprint must be a lowercase SHA-256 digest")
 
     @classmethod
-    def from_text(cls, value: str) -> Fingerprint:
+    def from_text(cls, value: str) -> Self:
         return cls(sha256(value.encode("utf-8")).hexdigest())
 
 

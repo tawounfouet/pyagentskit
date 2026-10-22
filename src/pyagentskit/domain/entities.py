@@ -12,16 +12,15 @@ from dataclasses import dataclass, field, replace
 from datetime import datetime
 from typing import TypeVar
 
+from .effects import Effect as Effect
+from .effects import ReconciliationCase as ReconciliationCase
 from .errors import InvalidTransitionError, StaleFencingTokenError
 from .lifecycle import (
-    EFFECT_TRANSITIONS,
     RUN_TRANSITIONS,
     WORKER_TRANSITIONS,
     ApprovalScope,
     ApprovalStatus,
-    EffectStatus,
     LeaseStatus,
-    ReconciliationStatus,
     RunStatus,
     RuntimeCapability,
     WorkerStatus,
@@ -40,14 +39,11 @@ from .shared import (
     ArtifactId,
     AuditEventId,
     ConversationId,
-    EffectId,
     ExternalReference,
     FencingToken,
-    Fingerprint,
     LeaseId,
     MessageId,
     ParticipantId,
-    ReconciliationCaseId,
     RunId,
     RuntimeBindingId,
     RuntimeInvocationId,
@@ -80,23 +76,6 @@ class Run:
 
     def transition(self, status: RunStatus) -> Run:
         _versioned_transition(self.status, status, RUN_TRANSITIONS)
-        return replace(self, status=status, version=self.version.next())
-
-
-@dataclass(frozen=True, slots=True)
-class Effect:
-    id: EffectId = field(default_factory=lambda: EffectId.new("effect"))
-    run_id: RunId = field(default_factory=lambda: RunId.new("run"))
-    fingerprint: Fingerprint = field(
-        default_factory=lambda: Fingerprint.from_text(str(EffectId.new()))
-    )
-    status: EffectStatus = EffectStatus.NOT_STARTED
-    external_reference: ExternalReference | None = None
-    version: AggregateVersion = field(default_factory=AggregateVersion)
-    created_at: datetime = field(default_factory=utc_now)
-
-    def transition(self, status: EffectStatus) -> Effect:
-        _versioned_transition(self.status, status, EFFECT_TRANSITIONS)
         return replace(self, status=status, version=self.version.next())
 
 
@@ -332,56 +311,3 @@ class AuditEvent:
     def __post_init__(self) -> None:
         if not self.event_type or not self.subject:
             raise ValueError("audit event type and subject are required")
-
-
-@dataclass(frozen=True, slots=True)
-class ReconciliationCase:
-    id: ReconciliationCaseId = field(
-        default_factory=lambda: ReconciliationCaseId.new("reconciliation")
-    )
-    effect_id: EffectId = field(default_factory=lambda: EffectId.new("effect"))
-    reason: str = ""
-    status: ReconciliationStatus = ReconciliationStatus.PENDING
-    resolution: str | None = None
-    version: AggregateVersion = field(default_factory=AggregateVersion)
-    created_at: datetime = field(default_factory=utc_now)
-
-    def __post_init__(self) -> None:
-        if not self.reason:
-            raise ValueError("reconciliation reason is required")
-        if self.status.is_terminal and not self.resolution:
-            raise ValueError("terminal reconciliation requires a resolution")
-
-    @property
-    def resolved(self) -> bool:
-        """Compatibility view over the explicit reconciliation lifecycle."""
-
-        return self.status.is_terminal
-
-    def start(self) -> ReconciliationCase:
-        if self.status is not ReconciliationStatus.PENDING:
-            raise InvalidTransitionError("only a pending reconciliation can start")
-        return replace(
-            self,
-            status=ReconciliationStatus.RUNNING,
-            version=self.version.next(),
-        )
-
-    def resolve(
-        self,
-        resolution: str,
-        *,
-        status: ReconciliationStatus = ReconciliationStatus.RESOLVED_SUCCESS,
-    ) -> ReconciliationCase:
-        if self.status.is_terminal:
-            raise InvalidTransitionError("reconciliation case is already resolved")
-        if not resolution:
-            raise ValueError("reconciliation resolution is required")
-        if not status.is_terminal:
-            raise InvalidTransitionError("reconciliation resolution must be terminal")
-        return replace(
-            self,
-            status=status,
-            resolution=resolution,
-            version=self.version.next(),
-        )
