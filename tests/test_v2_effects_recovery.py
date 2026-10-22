@@ -158,17 +158,23 @@ def recovery_context(
     cases: tuple[ReconciliationCase, ...] = (),
     snapshot: RuntimeRecoverySnapshot | None = None,
     security: SecuritySnapshot | None = None,
+    runtime_binding: RuntimeBinding | None = None,
     completion_ready: bool = False,
     known_failure: bool = False,
     authority_required: bool = True,
 ) -> RecoveryContext:
     current = run or running_run()
     ownership = ownership_for(current)
+    binding = runtime_binding or RuntimeBinding(
+        run_id=current.id,
+        runtime_id="test/runtime@1",
+        runtime_family="test",
+    )
     invocation = RuntimeInvocation(
         run_id=current.id,
-        binding_id=RuntimeBinding(runtime_id="test/runtime@1").id,
+        binding_id=binding.id,
         input="recover",
-        runtime_id="test/runtime@1",
+        runtime_id=binding.resolved_runtime_id,
         status=RuntimeStatus.WAITING,
     )
     return RecoveryContext(
@@ -176,11 +182,7 @@ def recovery_context(
         effects=effects,
         approvals=approvals,
         reconciliation_cases=cases,
-        runtime_binding=RuntimeBinding(
-            run_id=current.id,
-            runtime_id="test/runtime@1",
-            runtime_family="test",
-        ),
+        runtime_binding=binding,
         latest_runtime_invocation=invocation,
         runtime_snapshot=snapshot,
         ownership=ownership,
@@ -738,7 +740,11 @@ class RecoveryApplicationTests(unittest.IsolatedAsyncioTestCase):
                 handle_valid=False,
                 capabilities=adapter.descriptor.capabilities,
                 restart_safe=True,
-            )
+            ),
+            runtime_binding=RuntimeBinding(
+                runtime_id=adapter.descriptor.runtime_id,
+                runtime_family=adapter.descriptor.runtime_family,
+            ),
         )
         plan = planner.plan(context)
 
