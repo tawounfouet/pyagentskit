@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import re
-from collections.abc import Awaitable, Callable, Mapping
+from collections.abc import Awaitable, Callable
 from contextlib import AbstractAsyncContextManager
 from contextvars import ContextVar, Token
-from datetime import datetime
 from importlib.resources import files
 from types import TracebackType
 from typing import TypeVar
@@ -685,7 +684,10 @@ class PostgresV2LeaseRepository(_PostgresRepository):
                 "WHERE resource=$1 FOR UPDATE",
                 lease.resource,
             )
-            if counter is None or int(counter["current_fencing_token"]) != lease.fencing_token.value:
+            if (
+                counter is None
+                or int(counter["current_fencing_token"]) != lease.fencing_token.value
+            ):
                 raise ConcurrencyConflictError(
                     f"stale fencing token for resource {lease.resource}"
                 )
