@@ -109,15 +109,12 @@ class _PostgresV2Database:
                         "(component TEXT PRIMARY KEY, version INTEGER NOT NULL)"
                     )
                     row = await connection.fetchrow(
-                        f"SELECT version FROM {schema} "
-                        "WHERE component=$1 FOR UPDATE",
+                        f"SELECT version FROM {schema} WHERE component=$1 FOR UPDATE",
                         "persistence_v2",
                     )
                     current = 0 if row is None else int(row["version"])
                     if current > self.schema_version:
-                        raise PersistenceError(
-                            "PostgreSQL V2 schema is newer than this package"
-                        )
+                        raise PersistenceError("PostgreSQL V2 schema is newer than this package")
                     if current == 0:
                         migration = (
                             files("pyagentskit.adapters.persistence.migrations.postgres")
@@ -454,9 +451,7 @@ class PostgresV2MemoryRepository(_PostgresRepository):
                 expected_version.value,
             )
             if row is None:
-                raise ConcurrencyConflictError(
-                    f"stale or missing memory entry {entry.id}"
-                )
+                raise ConcurrencyConflictError(f"stale or missing memory entry {entry.id}")
 
         await self._db.call(operation)
 
@@ -531,9 +526,7 @@ class PostgresV2ReconciliationRepository(_PostgresRepository):
                     dumps(reconciliation_case_to_document(case)),
                 )
                 if row is None:
-                    raise DuplicateAggregateError(
-                        f"reconciliation case {case.id} already exists"
-                    )
+                    raise DuplicateAggregateError(f"reconciliation case {case.id} already exists")
 
             await self._db.call(insert)
             return
@@ -556,9 +549,7 @@ class PostgresV2ReconciliationRepository(_PostgresRepository):
                 expected_version.value,
             )
             if row is None:
-                raise ConcurrencyConflictError(
-                    f"stale or missing reconciliation case {case.id}"
-                )
+                raise ConcurrencyConflictError(f"stale or missing reconciliation case {case.id}")
 
         await self._db.call(update)
 
@@ -641,9 +632,7 @@ class PostgresV2ApprovalRepository(_PostgresRepository):
                 expected_version.value,
             )
             if row is None:
-                raise ConcurrencyConflictError(
-                    f"stale or missing approval {approval.id}"
-                )
+                raise ConcurrencyConflictError(f"stale or missing approval {approval.id}")
 
         await self._db.call(operation)
 
@@ -680,17 +669,14 @@ class PostgresV2LeaseRepository(_PostgresRepository):
 
         async def operation(connection: AsyncPostgresConnection) -> None:
             counter = await connection.fetchrow(
-                f"SELECT current_fencing_token FROM {resources} "
-                "WHERE resource=$1 FOR UPDATE",
+                f"SELECT current_fencing_token FROM {resources} WHERE resource=$1 FOR UPDATE",
                 lease.resource,
             )
             if (
                 counter is None
                 or int(counter["current_fencing_token"]) != lease.fencing_token.value
             ):
-                raise ConcurrencyConflictError(
-                    f"stale fencing token for resource {lease.resource}"
-                )
+                raise ConcurrencyConflictError(f"stale fencing token for resource {lease.resource}")
             row = await connection.fetchrow(
                 f"INSERT INTO {table}("
                 "id,resource,status,worker_id,fencing_token,version,created_at,payload_json"
@@ -713,9 +699,7 @@ class PostgresV2LeaseRepository(_PostgresRepository):
             )
             if duplicate is not None:
                 raise DuplicateAggregateError(f"lease {lease.id} already exists")
-            raise ConcurrencyConflictError(
-                f"resource {lease.resource} already has an active lease"
-            )
+            raise ConcurrencyConflictError(f"resource {lease.resource} already has an active lease")
 
         await self._db.atomic(operation)
 
@@ -743,9 +727,7 @@ class PostgresV2LeaseRepository(_PostgresRepository):
                 expected_version.value,
             )
             if row is None:
-                raise ConcurrencyConflictError(
-                    f"stale or missing lease {lease.id}"
-                )
+                raise ConcurrencyConflictError(f"stale or missing lease {lease.id}")
 
         await self._db.call(operation)
 
@@ -785,9 +767,7 @@ class PostgresV2AuditStore(_PostgresRepository):
                 dumps(audit_to_document(event)),
             )
             if row is None:
-                raise DuplicateAggregateError(
-                    f"audit event {event.id} already exists"
-                )
+                raise DuplicateAggregateError(f"audit event {event.id} already exists")
 
         await self._db.call(operation)
 
@@ -796,8 +776,7 @@ class PostgresV2AuditStore(_PostgresRepository):
 
         async def operation(connection: AsyncPostgresConnection) -> tuple[AuditEvent, ...]:
             rows = await connection.fetch(
-                f"SELECT payload_json FROM {table} "
-                "WHERE subject=$1 ORDER BY occurred_at,id",
+                f"SELECT payload_json FROM {table} WHERE subject=$1 ORDER BY occurred_at,id",
                 subject,
             )
             return tuple(audit_from_document(loads(str(row["payload_json"]))) for row in rows)
@@ -825,9 +804,7 @@ class PostgresV2OutboxStore(_PostgresRepository):
                 dumps(integration_event_to_document(event)),
             )
             if row is None:
-                raise DuplicateAggregateError(
-                    f"outbox event {event.event_id} already exists"
-                )
+                raise DuplicateAggregateError(f"outbox event {event.event_id} already exists")
 
         await self._db.call(operation)
 
@@ -875,9 +852,7 @@ class PostgresV2OutboxStore(_PostgresRepository):
                     continue
                 claimed.append(
                     OutboxRecord(
-                        event=integration_event_from_document(
-                            loads(str(row["event_json"]))
-                        ),
+                        event=integration_event_from_document(loads(str(row["event_json"]))),
                         status=OutboxStatus.CLAIMED,
                         attempt_count=int(updated["attempt_count"]),
                         next_attempt_at=row["next_attempt_at"],
@@ -961,8 +936,7 @@ class PostgresV2InboxStore(_PostgresRepository):
             if row is not None:
                 return True
             existing = await connection.fetchrow(
-                f"SELECT digest FROM {table} "
-                "WHERE source=$1 AND external_event_id=$2",
+                f"SELECT digest FROM {table} WHERE source=$1 AND external_event_id=$2",
                 record.source,
                 record.external_event_id,
             )
