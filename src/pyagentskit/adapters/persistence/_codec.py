@@ -46,6 +46,12 @@ from ...domain.lifecycle import (
     RunStatus,
     RuntimeCapability,
 )
+from ...domain.runtime import (
+    RuntimeHandle,
+    RuntimeQualificationLevel,
+    RuntimeStatus,
+    SideEffectControlLevel,
+)
 from ...domain.shared import (
     AggregateVersion,
     ApprovalId,
@@ -64,12 +70,6 @@ from ...domain.shared import (
     RuntimeInvocationId,
     TenantId,
     WorkerId,
-)
-from ...domain.runtime import (
-    RuntimeHandle,
-    RuntimeQualificationLevel,
-    RuntimeStatus,
-    SideEffectControlLevel,
 )
 
 
