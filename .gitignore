@@ -9,7 +9,8 @@ __pycache__/
 build/
 dist/
 htmlcov/
+release-dist/*.whl
+release-dist/*.tar.gz
 .env
 .env.*
 !.env.example
-
