@@ -136,7 +136,7 @@ class MemorySessionRepository:
         self._items[session.id] = session
 
 
-class MemoryMemoryRepository:
+class InMemoryMemoryRepository:
     def __init__(self) -> None:
         self._items: dict[MemoryEntryId, MemoryEntry] = {}
 
@@ -702,7 +702,7 @@ class MemoryUnitOfWork:
     def __init__(self) -> None:
         self.runs = MemoryRunRepository()
         self.effects = MemoryEffectRepository()
-        self.memories = MemoryMemoryRepository()
+        self.memories = InMemoryMemoryRepository()
         self.reconciliations = MemoryReconciliationRepository()
         self.approvals = MemoryApprovalRepository()
         self.outbox = MemoryOutboxStore()
@@ -764,7 +764,7 @@ __all__ = [
     "MemoryEffectRepository",
     "MemoryInboxStore",
     "MemoryLeaseRepository",
-    "MemoryMemoryRepository",
+    "InMemoryMemoryRepository",
     "MemoryMessageRepository",
     "MemoryOutboxStore",
     "MemoryReconciliationRepository",
