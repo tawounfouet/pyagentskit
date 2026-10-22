@@ -4,7 +4,7 @@
 **Version du document :** 1.0  
 **Date :** 22 octobre 2026  
 **Release cible :** `2.0.0a4`  
-**Statut :** **PLANNED**  
+**Statut :** **QUALIFIED — RELEASE PENDING**  
 **Projet :** PyAgentsKit V2
 
 > **Matérialiser les semantics V2 dans des repositories/stores contractuels et un modèle PostgreSQL normalisé, concurrent et recoverable.**
