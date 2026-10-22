@@ -81,6 +81,7 @@ jobs:
           python -m pytest -q
           -o addopts="--strict-config --strict-markers"
           tests/test_v2_postgres_live_qualification.py
+          tests/test_v2_persistence_postgres_live.py
 
   package:
     runs-on: ubuntu-latest
