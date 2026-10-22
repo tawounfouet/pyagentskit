@@ -587,6 +587,114 @@ class ReconciliationApplicationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.case.status, ReconciliationStatus.MANUAL_REVIEW)
 
 
+class FlagshipRecoveryScenarioTests(unittest.IsolatedAsyncioTestCase):
+    async def test_timeout_crash_takeover_reconcile_then_resume_without_resend(self) -> None:
+        run = running_run()
+        worker_a = ownership_for(run, token=1, worker="worker-a")
+        repo = MemoryEffectRepository()
+        audit = MemoryAuditSink()
+        gate = EffectExecutionGate(effects=repo, audit=audit)
+        effect = Effect(
+            run_id=run.id,
+            kind=EffectKind("provider.create_resource"),
+            idempotency_key=IdempotencyKey("run", "create-resource-42"),
+            fingerprint=InputFingerprint.from_text("resource=42"),
+            risk_level=EffectRiskLevel.HIGH,
+        )
+
+        prepared = await gate.prepare(effect, ownership=worker_a, protected=True)
+        unknown = await gate.mark_unknown(
+            prepared.effect,
+            reason="timeout after external send",
+        )
+
+        worker_b = OwnershipContext(
+            worker_id=WorkerId("worker-b"),
+            lease_id=LeaseId("lease-b"),
+            resource_identity=worker_a.resource_identity,
+            fencing_token=FencingToken(2),
+            expires_at=datetime.now(UTC) + timedelta(minutes=5),
+        )
+        planner = RecoveryPlanner()
+        after_takeover = RecoveryContext(
+            run=run,
+            effects=(unknown,),
+            ownership=worker_b,
+            current_worker_id=worker_b.worker_id,
+            security=SecuritySnapshot(valid=True, policy_version="policy-1"),
+            now=datetime.now(UTC),
+        )
+        reconcile_plan = planner.plan(after_takeover)
+        self.assertEqual(reconcile_plan.next_action, NextAction.RECONCILE_EFFECT)
+
+        reconciliations = MemoryReconciliationRepository()
+
+        class FlagshipPort:
+            calls = 0
+
+            async def reconcile(self, observed_effect, case):
+                self.calls += 1
+                self.assertions(observed_effect, case)
+                return ReconciliationObservation(
+                    resolution=ReconciliationResolution.CONFIRMED_SUCCESS,
+                    external_reference=ExternalReference("provider", "resource-42"),
+                    evidence=(
+                        ReconciliationEvidence(
+                            case_id=case.id,
+                            source=EvidenceSource.PROVIDER_API,
+                            kind=EvidenceKind.OBJECT_EXISTS,
+                            summary="provider confirms resource-42 exists",
+                            confidence=EvidenceConfidence.AUTHORITATIVE,
+                        ),
+                    ),
+                )
+
+            @staticmethod
+            def assertions(observed_effect, case):
+                if observed_effect.status is not EffectStatus.RECONCILIATION_REQUIRED:
+                    raise AssertionError("Effect must be durably marked for reconciliation")
+                persisted = reconciliations.cases.get(case.id)
+                if persisted is None or persisted.status is not ReconciliationStatus.RUNNING:
+                    raise AssertionError("ReconciliationCase must be durable before provider lookup")
+
+        port = FlagshipPort()
+        reconciler = ReconcileEffect(
+            effects=repo,
+            reconciliations=reconciliations,
+            port=port,
+            audit=audit,
+        )
+        result = await reconciler.execute(
+            unknown.id,
+            strategy=ReconciliationStrategy.BY_EXTERNAL_ID,
+        )
+
+        self.assertEqual(result.effect.status, EffectStatus.SUCCEEDED)
+        self.assertEqual(port.calls, 1)
+        self.assertEqual(repo.save_history.count(EffectStatus.STARTED), 1)
+
+        resumable = RuntimeRecoverySnapshot(
+            status=RuntimeStatus.WAITING,
+            handle_valid=True,
+            capabilities=frozenset({RuntimeCapability.RESUME}),
+        )
+        after_reconciliation = RecoveryContext(
+            run=run,
+            effects=(result.effect,),
+            reconciliation_cases=(result.case,),
+            runtime_snapshot=resumable,
+            ownership=worker_b,
+            current_worker_id=worker_b.worker_id,
+            security=SecuritySnapshot(valid=True, policy_version="policy-1"),
+            now=datetime.now(UTC),
+        )
+        resume_plan = planner.plan(after_reconciliation)
+
+        self.assertEqual(resume_plan.next_action, NextAction.RESUME_RUNTIME)
+        self.assertFalse(result.effect.safe_to_replay)
+        self.assertEqual(repo.save_history.count(EffectStatus.STARTED), 1)
+
+
 class RecoveryApplicationTests(unittest.IsolatedAsyncioTestCase):
     async def test_plan_recovery_emits_audit_decision(self) -> None:
         audit = MemoryAuditSink()
