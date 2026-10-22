@@ -17,7 +17,6 @@ from pyagentskit.adapters.persistence import (
     PostgresV2LeaseRepository,
     PostgresV2OutboxStore,
     PostgresV2RunRepository,
-    PostgresV2RuntimeRepository,
     PostgresV2UnitOfWork,
 )
 from pyagentskit.contracts import InboxRecord, OutboxStatus
