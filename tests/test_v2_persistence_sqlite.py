@@ -59,7 +59,7 @@ class SQLitePersistenceTests(unittest.IsolatedAsyncioTestCase):
             version = connection.execute(
                 "SELECT version FROM v2_schema_migrations WHERE component='persistence_v2'"
             ).fetchone()
-            self.assertEqual(version, (1,))
+            self.assertEqual(version, (2,))
             indexes = {
                 row[0]
                 for row in connection.execute("SELECT name FROM sqlite_master WHERE type='index'")
