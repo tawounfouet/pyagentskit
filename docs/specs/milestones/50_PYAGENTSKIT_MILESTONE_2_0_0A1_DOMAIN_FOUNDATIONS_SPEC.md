@@ -126,13 +126,13 @@ failure tests when relevant
 
 # 6. Livrables attendus
 
-- Topologie DDD/hexagonale créée physiquement dans src/pyagentskit/.
-- Domain package indépendant des adapters et de la persistence.
-- State machines explicites pour Run, Effect, Approval et Lease.
-- Tests unitaires, tests de transitions invalides et property-based tests.
-- Architecture checks exécutés en CI.
-- Wheel + sdist installables dans un environnement propre.
-- Changelog et release notes de 2.0.0a1.
+- [x] Topologie DDD/hexagonale créée physiquement dans src/pyagentskit/.
+- [x] Domain package indépendant des adapters et de la persistence.
+- [x] State machines explicites pour Run, Effect, Approval et Lease.
+- [x] Tests unitaires, tests de transitions invalides et property-based tests.
+- [x] Architecture checks exécutés en CI.
+- [x] Wheel + sdist installables dans un environnement propre.
+- [x] Changelog et release notes de 2.0.0a1.
 
 ---
 
@@ -140,17 +140,17 @@ failure tests when relevant
 
 ## 7.1 Architecture
 
-- [ ] Vérifier que les composants du milestone respectent la topologie DDD/hexagonale.
-- [ ] Vérifier les dépendances autorisées entre Domain, Application, Adapters, API et Bootstrap.
-- [ ] Introduire un ADR uniquement si une décision structurante n’est pas déjà couverte.
-- [ ] Éviter tout couplage à un provider spécifique dans le Domain.
+- [x] Vérifier que les composants du milestone respectent la topologie DDD/hexagonale.
+- [x] Vérifier les dépendances autorisées entre Domain, Application, Adapters, API et Bootstrap.
+- [x] Introduire un ADR uniquement si une décision structurante n’est pas déjà couverte.
+- [x] Éviter tout couplage à un provider spécifique dans le Domain.
 
 ## 7.2 Domaine / contrats
 
-- [ ] Implémenter les objets et contracts explicitement inclus dans le scope.
-- [ ] Rendre les transitions critiques explicites.
-- [ ] Stabiliser les Value Objects nécessaires au milestone.
-- [ ] Préserver les distinctions sémantiques V2.
+- [x] Implémenter les objets et contracts explicitement inclus dans le scope.
+- [x] Rendre les transitions critiques explicites.
+- [x] Stabiliser les Value Objects nécessaires au milestone.
+- [x] Préserver les distinctions sémantiques V2.
 
 ## 7.3 Application
 
@@ -168,20 +168,20 @@ failure tests when relevant
 
 ## 7.5 Tests
 
-- [ ] Tests unitaires.
-- [ ] Tests de transitions invalides.
-- [ ] Tests de contracts.
-- [ ] Tests de failure si applicables.
-- [ ] Tests d’architecture.
-- [ ] Tests de packaging.
+- [x] Tests unitaires.
+- [x] Tests de transitions invalides.
+- [x] Tests de contracts.
+- [x] Tests de failure si applicables.
+- [x] Tests d’architecture.
+- [x] Tests de packaging.
 
 ## 7.6 Documentation
 
-- [ ] Mettre à jour le `../../ROADMAP.md`.
-- [ ] Mettre à jour le changelog.
-- [ ] Documenter les APIs nouvelles ou modifiées.
-- [ ] Documenter les limitations connues.
-- [ ] Ajouter au moins un exemple minimal représentatif.
+- [x] Mettre à jour le `../../ROADMAP.md`.
+- [x] Mettre à jour le changelog.
+- [x] Documenter les APIs nouvelles ou modifiées.
+- [x] Documenter les limitations connues.
+- [x] Ajouter au moins un exemple minimal représentatif.
 
 ---
 
@@ -231,16 +231,16 @@ Le milestone ne peut être considéré terminé que si :
 
 # 10. Definition of Done
 
-- [ ] Le scope obligatoire du milestone est implémenté.
-- [ ] Les invariants P0 associés possèdent des tests exécutables.
-- [ ] Les tests CI du niveau requis sont verts.
-- [ ] Les dépendances de packages respectent les règles d’architecture.
-- [ ] Les erreurs provider/infrastructure sont normalisées.
-- [ ] Les nouvelles surfaces publiques sont documentées.
-- [ ] Le package se construit de manière reproductible.
-- [ ] Un environnement propre peut installer/importer la release.
-- [ ] Le changelog contient les changements du milestone.
-- [ ] Les limites et non-goals sont explicitement documentés.
+- [x] Le scope obligatoire du milestone est implémenté.
+- [x] Les invariants P0 associés possèdent des tests exécutables.
+- [x] Les tests CI du niveau requis sont verts.
+- [x] Les dépendances de packages respectent les règles d’architecture.
+- [x] Les erreurs provider/infrastructure sont normalisées.
+- [x] Les nouvelles surfaces publiques sont documentées.
+- [x] Le package se construit de manière reproductible.
+- [x] Un environnement propre peut installer/importer la release.
+- [x] Le changelog contient les changements du milestone.
+- [x] Les limites et non-goals sont explicitement documentés.
 
 ---
 
@@ -294,15 +294,15 @@ test evidence
 
 Checklist :
 
-- [ ] version `pyproject.toml` mise à jour ;
-- [ ] build wheel ;
-- [ ] build sdist ;
-- [ ] installation en environnement vierge ;
-- [ ] smoke import ;
-- [ ] tests verts ;
-- [ ] checksums ;
+- [x] version `pyproject.toml` mise à jour ;
+- [x] build wheel ;
+- [x] build sdist ;
+- [x] installation en environnement vierge ;
+- [x] smoke import ;
+- [x] tests verts ;
+- [x] checksums ;
 - [ ] tag Git correspondant ;
-- [ ] release notes.
+- [x] release notes.
 
 ---
 

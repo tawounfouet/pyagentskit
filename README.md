@@ -1,6 +1,6 @@
 # PyAgentsKit
 
-[![Release](https://img.shields.io/badge/release-1.6.0-blue)](#release-status)
+[![Release](https://img.shields.io/badge/release-2.0.0a1-blue)](#release-status)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](pyproject.toml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 
@@ -12,9 +12,8 @@ mono-agent execution.
 
 ## Release status
 
-Version `1.6.0` preserves the stable V1 public API and operationalizes distributed durable
-execution with bounded admission, graceful drain, health, audit, metrics and production failure
-qualification. The V1 baseline includes:
+Version `2.0.0a1` adds the first infrastructure-independent V2 domain foundation while preserving
+the stable V1 public API. The V1 baseline includes:
 
 - immutable Pydantic contracts for agents, messages, models, runs, usage and events;
 - typed `@tool` functions with strict arguments, results, policies and timeouts;

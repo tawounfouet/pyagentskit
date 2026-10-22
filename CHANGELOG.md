@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.0.0a1] - 2026-10-22
+
+### Added
+
+- Added the infrastructure-independent V2 domain boundary and package topology.
+- Added typed domain identifiers, aggregate versions, fingerprints, external references and fencing tokens.
+- Added P0 domain entities for runs, effects, approvals, leases, workers, conversations, runtimes, artifacts, audit and reconciliation.
+- Added explicit V2 lifecycle transitions with terminality and stale fencing protection.
+- Added V2 domain invariant and architecture tests without changing the frozen V1 exports.
+
+### Not Included
+
+- PostgreSQL V2 persistence, external runtime adapters, connectors and production qualification remain future milestones.
+
 ## [1.6.0] - 2026-09-11
 
 ### Added

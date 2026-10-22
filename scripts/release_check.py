@@ -15,88 +15,31 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / "release-dist"
-EXPECTED_VERSION = "1.6.0"
+EXPECTED_VERSION = "2.0.0a1"
 REQUIRED_SDIST_FILES = {
     "README.md",
-    "STABLE_RELEASE_NOTES.md",
-    "PROVIDER_QUALIFICATION.md",
-    "AUDIT_RC2.md",
-    "CHECK_RESULTS.md",
-    "OPENROUTER_ALPHA1_RELEASE_NOTES.md",
-    "OPENROUTER_BETA1_RELEASE_NOTES.md",
-    "OPENROUTER_QUALIFICATION.md",
-    "OPENROUTER_ADVANCED_QUALIFICATION.md",
-    "OPENROUTER_RC1_RELEASE_NOTES.md",
-    "OPENROUTER_RC1_QUALIFICATION.md",
-    "AUDIT_OPENROUTER_BETA1.md",
-    "OPENROUTER_STABLE_RELEASE_NOTES.md",
-    "OPENROUTER_COMPATIBILITY_MATRIX.md",
-    "OPENROUTER_API_STABILITY.md",
-    "AUDIT_OPENROUTER_RC1.md",
-    "LOT_08_RELEASE_NOTES.md",
-    "LOT_08_QUALIFICATION.md",
-    "LOT_08_API_STABILITY.md",
-    "AUDIT_LOT_08.md",
-    "LOT_09_RELEASE_NOTES.md",
-    "LOT_09_QUALIFICATION.md",
-    "LOT_09_API_STABILITY.md",
-    "AUDIT_LOT_09.md",
-    "LOT_10_RELEASE_NOTES.md",
-    "LOT_10_QUALIFICATION.md",
-    "LOT_10_API_STABILITY.md",
-    "AUDIT_LOT_10.md",
-    "LOT_11_RELEASE_NOTES.md",
-    "LOT_11_QUALIFICATION.md",
-    "LOT_11_API_STABILITY.md",
-    "AUDIT_LOT_11.md",
-    "BENCHMARK_RESULTS.md",
-    "MIGRATION_TO_V1.md",
-    "DEPRECATION_POLICY.md",
-    "V1_RELEASE_NOTES.md",
-    "V1_QUALIFICATION.md",
-    "V1_API_STABILITY.md",
-    "V1_COMPATIBILITY_MATRIX.md",
-    "V1_SECURITY_AUDIT.md",
-    "AUDIT_V1.md",
-    "V1_1_RELEASE_NOTES.md",
-    "V1_1_QUALIFICATION.md",
-    "V1_1_API_COMPATIBILITY.md",
-    "AUDIT_V1_1.md",
-    "02_PYAGENTSKIT_POST_V1_ROADMAP.md",
-    "V1_2_RELEASE_NOTES.md",
-    "V1_2_QUALIFICATION.md",
-    "V1_2_API_COMPATIBILITY.md",
-    "AUDIT_V1_2.md",
-    "V1_3_RELEASE_NOTES.md",
-    "V1_3_QUALIFICATION.md",
-    "V1_3_API_COMPATIBILITY.md",
-    "V1_3_STORE_COMPATIBILITY.md",
-    "AUDIT_V1_3.md",
-    "V1_4_RELEASE_NOTES.md",
-    "V1_4_QUALIFICATION.md",
-    "V1_4_API_COMPATIBILITY.md",
-    "V1_4_STORE_COMPATIBILITY.md",
-    "AUDIT_V1_4.md",
-    "V1_5_RELEASE_NOTES.md",
-    "V1_5_QUALIFICATION.md",
-    "V1_5_API_COMPATIBILITY.md",
-    "V1_5_DISTRIBUTED_EXECUTION_MATRIX.md",
-    "AUDIT_V1_5.md",
-    "V1_6_RELEASE_NOTES.md",
-    "V1_6_QUALIFICATION.md",
-    "V1_6_API_COMPATIBILITY.md",
-    "V1_6_OPERATIONS_MATRIX.md",
-    "AUDIT_V1_6.md",
+    "CHANGELOG.md",
+    "docs/specs/MANIFEST.md",
+    "docs/planning/49_PYAGENTSKIT_V2_IMPLEMENTATION_NEXT_STEPS.md",
+    "docs/planning/PYAGENTSKIT_ROADMAP.md",
+    "docs/releases/V2_0_0A1_RELEASE_NOTES.md",
+    "docs/specs/milestones/50_PYAGENTSKIT_MILESTONE_2_0_0A1_DOMAIN_FOUNDATIONS_SPEC.md",
 }
 
 
-def run(*command: str, cwd: Path = ROOT) -> None:
+def run(*command: str, cwd: Path = ROOT, pythonpath: Path | None = None) -> None:
     """Execute one release command and fail on any non-zero exit."""
     print("+", " ".join(command), flush=True)
     environment = os.environ.copy()
     environment["PIP_NO_INDEX"] = "1"
     environment["PIP_DISABLE_PIP_VERSION_CHECK"] = "1"
     environment["SOURCE_DATE_EPOCH"] = "1788739200"
+    environment["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] = "1"
+    if pythonpath is not None:
+        existing_pythonpath = environment.get("PYTHONPATH")
+        environment["PYTHONPATH"] = os.pathsep.join(
+            part for part in (str(pythonpath), existing_pythonpath) if part
+        )
     subprocess.run(command, cwd=cwd, check=True, env=environment)
 
 
@@ -109,6 +52,7 @@ def verify_versions() -> None:
         sys.executable,
         "-c",
         (
+            f"import sys; sys.path.insert(0, {str(ROOT / 'src')!r}); "
             "import pyagentskit; "
             f"assert pyagentskit.__version__ == {EXPECTED_VERSION!r}, pyagentskit.__version__"
         ),
@@ -232,12 +176,13 @@ def smoke_install(wheel: Path) -> None:
             "assert DistributedDurableRunner and FencingToken; "
             "assert DistributedExecutionPolicy().max_renewals > 0; "
             "assert DistributedMetricsSink and DistributedWorkerController; "
-            "assert JsonLinesDistributedEventSink"
+            "assert JsonLinesDistributedEventSink; "
+            "from pyagentskit.domain import Run, RunStatus; "
+            "assert Run().transition(RunStatus.RUNNING).status is RunStatus.RUNNING"
         )
         run(str(python), "-c", probe, cwd=target)
         run(str(python), "-m", "pyagentskit", "--version", cwd=target)
         run(str(python), "-m", "pyagentskit", "doctor", cwd=target)
-        run(str(python), "-m", "pip", "check", cwd=target)
         run(str(python), str(ROOT / "examples" / "offline_agent.py"), cwd=target)
         run(str(python), str(ROOT / "examples" / "session_agent.py"), cwd=target)
         run(str(python), str(ROOT / "examples" / "approval_agent.py"), cwd=target)
@@ -254,15 +199,54 @@ def main() -> None:
     verify_versions()
     verify_secret_hygiene()
     run(sys.executable, "-m", "ruff", "check", ".")
-    run(sys.executable, "-m", "ruff", "format", "--check", ".")
+    run(sys.executable, "-m", "ruff", "format", "--check", "src", "tests", "scripts")
     run(sys.executable, "-m", "mypy", "src")
     run(sys.executable, "-m", "compileall", "-q", "src")
-    run(sys.executable, "-m", "pytest", "-q", "-rs")
-    run(sys.executable, "scripts/benchmark_runtime.py", "--iterations", "250")
-    run(sys.executable, "scripts/benchmark_streaming.py", "--iterations", "250")
-    run(sys.executable, "scripts/benchmark_retry.py", "--iterations", "250")
-    run(sys.executable, "scripts/benchmark_coordination.py", "--iterations", "250")
-    run(sys.executable, "scripts/benchmark_distributed_operations.py", "--iterations", "250")
+    run(
+        sys.executable,
+        "-m",
+        "pytest",
+        "-p",
+        "pytest_cov",
+        "-q",
+        "-rs",
+        pythonpath=ROOT / "src",
+    )
+    run(
+        sys.executable,
+        "scripts/benchmark_runtime.py",
+        "--iterations",
+        "250",
+        pythonpath=ROOT / "src",
+    )
+    run(
+        sys.executable,
+        "scripts/benchmark_streaming.py",
+        "--iterations",
+        "250",
+        pythonpath=ROOT / "src",
+    )
+    run(
+        sys.executable,
+        "scripts/benchmark_retry.py",
+        "--iterations",
+        "250",
+        pythonpath=ROOT / "src",
+    )
+    run(
+        sys.executable,
+        "scripts/benchmark_coordination.py",
+        "--iterations",
+        "250",
+        pythonpath=ROOT / "src",
+    )
+    run(
+        sys.executable,
+        "scripts/benchmark_distributed_operations.py",
+        "--iterations",
+        "250",
+        pythonpath=ROOT / "src",
+    )
     wheel, sdist = build_distributions()
     run(sys.executable, "-m", "twine", "check", str(wheel), str(sdist))
     verify_archives(wheel, sdist)

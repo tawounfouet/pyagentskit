@@ -38,7 +38,7 @@ class DoctorReport(ContractModel):
 def run_doctor() -> DoctorReport:
     """Inspect local runtime compatibility without network or credentials."""
 
-    supported = (3, 11) <= sys.version_info[:2] < (3, 14)
+    supported = (3, 11) <= sys.version_info[:2] < (3, 15)
     checks = [
         DoctorCheck(
             name="python",
@@ -46,7 +46,7 @@ def run_doctor() -> DoctorReport:
             message=(
                 f"Python {platform.python_version()} is supported"
                 if supported
-                else f"Python {platform.python_version()} is outside 3.11-3.13"
+                else f"Python {platform.python_version()} is outside 3.11-3.14"
             ),
         ),
         DoctorCheck(

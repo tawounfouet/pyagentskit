@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import importlib
 from collections.abc import AsyncIterator, Callable, Mapping
 from datetime import datetime
 from typing import Any, Protocol, runtime_checkable
@@ -223,7 +224,7 @@ def create_s3_client(**configuration: Any) -> Any:
     """Create a boto3 S3 client; credentials remain owned by the SDK chain."""
 
     try:
-        import boto3  # type: ignore[import-not-found]
+        boto3 = importlib.import_module("boto3")
     except ImportError as exc:
         raise PersistenceError('S3 support requires pip install "pyagentskit[s3]"') from exc
     return boto3.client("s3", **configuration)
