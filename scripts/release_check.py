@@ -15,7 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / "release-dist"
-EXPECTED_VERSION = "2.0.0a2"
+EXPECTED_VERSION = "2.0.0a3"
 REQUIRED_SDIST_FILES = {
     "README.md",
     "CHANGELOG.md",
