@@ -20,7 +20,15 @@ from ...domain.effects import (
     ReconciliationCase,
     ReconciliationEvidence,
 )
-from ...domain.entities import Approval, AuditEvent, Lease, MemoryEntry, Run
+from ...domain.entities import (
+    Approval,
+    AuditEvent,
+    Lease,
+    MemoryEntry,
+    Run,
+    RuntimeBinding,
+    RuntimeInvocation,
+)
 from ...domain.errors import (
     ConcurrencyConflictError,
     DuplicateAggregateError,
@@ -37,6 +45,8 @@ from ...domain.shared import (
     FencingToken,
     MemoryEntryId,
     RunId,
+    RuntimeBindingId,
+    RuntimeInvocationId,
 )
 from ...postgres import AsyncPostgresConnection, AsyncPostgresPool
 from ._codec import (
@@ -59,6 +69,10 @@ from ._codec import (
     reconciliation_evidence_to_document,
     run_from_document,
     run_to_document,
+    runtime_binding_from_document,
+    runtime_binding_to_document,
+    runtime_invocation_from_document,
+    runtime_invocation_to_document,
 )
 
 ResultT = TypeVar("ResultT")
@@ -760,6 +774,129 @@ class PostgresV2LeaseRepository(_PostgresRepository):
         return await self._db.atomic(operation)
 
 
+class PostgresV2RuntimeRepository(_PostgresRepository):
+    async def get_binding(
+        self,
+        binding_id: RuntimeBindingId,
+    ) -> RuntimeBinding | None:
+        table = self._db.table("runtime_bindings")
+
+        async def operation(connection: AsyncPostgresConnection) -> RuntimeBinding | None:
+            row = await connection.fetchrow(
+                f"SELECT payload_json FROM {table} WHERE id=$1",
+                str(binding_id),
+            )
+            return (
+                None
+                if row is None
+                else runtime_binding_from_document(loads(str(row["payload_json"])))
+            )
+
+        return await self._db.call(operation)
+
+    async def add_binding(self, binding: RuntimeBinding) -> None:
+        table = self._db.table("runtime_bindings")
+
+        async def operation(connection: AsyncPostgresConnection) -> None:
+            row = await connection.fetchrow(
+                f"INSERT INTO {table}("
+                "id,run_id,runtime_id,runtime_family,bound_at,payload_json"
+                ") VALUES ($1,$2,$3,$4,$5,$6::jsonb) "
+                "ON CONFLICT(id) DO NOTHING RETURNING id",
+                str(binding.id),
+                None if binding.run_id is None else str(binding.run_id),
+                binding.resolved_runtime_id,
+                binding.runtime_family,
+                binding.bound_at,
+                dumps(runtime_binding_to_document(binding)),
+            )
+            if row is None:
+                raise DuplicateAggregateError(
+                    f"runtime binding {binding.id} already exists"
+                )
+
+        await self._db.call(operation)
+
+    async def get_invocation(
+        self,
+        invocation_id: RuntimeInvocationId,
+    ) -> RuntimeInvocation | None:
+        table = self._db.table("runtime_invocations")
+
+        async def operation(connection: AsyncPostgresConnection) -> RuntimeInvocation | None:
+            row = await connection.fetchrow(
+                f"SELECT payload_json FROM {table} WHERE id=$1",
+                str(invocation_id),
+            )
+            return (
+                None
+                if row is None
+                else runtime_invocation_from_document(loads(str(row["payload_json"])))
+            )
+
+        return await self._db.call(operation)
+
+    async def add_invocation(self, invocation: RuntimeInvocation) -> None:
+        table = self._db.table("runtime_invocations")
+
+        async def operation(connection: AsyncPostgresConnection) -> None:
+            row = await connection.fetchrow(
+                f"INSERT INTO {table}("
+                "id,run_id,binding_id,runtime_id,status,version,started_at,"
+                "completed_at,payload_json"
+                ") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb) "
+                "ON CONFLICT(id) DO NOTHING RETURNING id",
+                str(invocation.id),
+                str(invocation.run_id),
+                str(invocation.binding_id),
+                invocation.runtime_id,
+                invocation.status.value,
+                invocation.version.value,
+                invocation.started_at,
+                invocation.completed_at,
+                dumps(runtime_invocation_to_document(invocation)),
+            )
+            if row is None:
+                raise DuplicateAggregateError(
+                    f"runtime invocation {invocation.id} already exists"
+                )
+
+        await self._db.call(operation)
+
+    async def save_invocation(
+        self,
+        invocation: RuntimeInvocation,
+        *,
+        expected_version: AggregateVersion,
+    ) -> None:
+        if invocation.version != expected_version.next():
+            raise ConcurrencyConflictError(
+                "saved aggregate version must advance by exactly one"
+            )
+        table = self._db.table("runtime_invocations")
+
+        async def operation(connection: AsyncPostgresConnection) -> None:
+            row = await connection.fetchrow(
+                f"UPDATE {table} SET runtime_id=$2,status=$3,version=$4,"
+                "started_at=$5,completed_at=$6,payload_json=$7::jsonb "
+                "WHERE id=$1 AND version=$8 RETURNING id",
+                str(invocation.id),
+                invocation.runtime_id,
+                invocation.status.value,
+                invocation.version.value,
+                invocation.started_at,
+                invocation.completed_at,
+                dumps(runtime_invocation_to_document(invocation)),
+                expected_version.value,
+            )
+            if row is None:
+                raise ConcurrencyConflictError(
+                    f"stale or missing runtime invocation {invocation.id}"
+                )
+
+        await self._db.call(operation)
+
+
 class PostgresV2AuditStore(_PostgresRepository):
     async def append(self, event: AuditEvent) -> None:
         table = self._db.table("audit_events")
@@ -1043,6 +1180,7 @@ class PostgresV2UnitOfWork:
         self.memories = PostgresV2MemoryRepository(self._db)
         self.reconciliations = PostgresV2ReconciliationRepository(self._db)
         self.approvals = PostgresV2ApprovalRepository(self._db)
+        self.runtimes = PostgresV2RuntimeRepository(self._db)
         self.outbox = PostgresV2OutboxStore(self._db)
         self.audit = PostgresV2AuditStore(self._db)
         self._acquire: AbstractAsyncContextManager[AsyncPostgresConnection] | None = None
@@ -1115,5 +1253,6 @@ __all__ = [
     "PostgresV2OutboxStore",
     "PostgresV2ReconciliationRepository",
     "PostgresV2RunRepository",
+    "PostgresV2RuntimeRepository",
     "PostgresV2UnitOfWork",
 ]
