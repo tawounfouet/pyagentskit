@@ -212,7 +212,9 @@ class RuntimeBindingPolicy:
         """Reject silent runtime-family changes for an existing binding."""
 
         if current.runtime_family is None:
-            return
+            raise RuntimeBindingError(
+                "runtime binding has no family snapshot; rebinding cannot be validated safely"
+            )
         if candidate.runtime_family != current.runtime_family:
             raise RuntimeBindingError(
                 "runtime family cannot change silently: "
