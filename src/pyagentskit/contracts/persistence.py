@@ -229,6 +229,7 @@ class UnitOfWork(Protocol):
     memories: MemoryRepository
     reconciliations: ReconciliationRepository
     approvals: ApprovalRepository
+    runtimes: RuntimeRepository
     outbox: OutboxStore
     audit: AuditStore
 
