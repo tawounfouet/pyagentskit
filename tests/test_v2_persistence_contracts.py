@@ -227,6 +227,21 @@ class OutboxInboxContractTests(unittest.IsolatedAsyncioTestCase):
         await outbox.mark_published(event.event_id)
         self.assertEqual(await outbox.claim_batch(worker_id="worker-c"), ())
 
+    async def test_outbox_stale_claim_is_reclaimed_after_publisher_crash(self) -> None:
+        outbox = MemoryOutboxStore()
+        event = IntegrationEvent(name="effect.changed")
+        await outbox.append(event)
+
+        first = await outbox.claim_batch(worker_id="publisher-a")
+        self.assertEqual(first[0].attempt_count, 1)
+
+        second = await outbox.claim_batch(
+            worker_id="publisher-b",
+            claim_timeout_seconds=0,
+        )
+        self.assertEqual(second[0].attempt_count, 2)
+        self.assertEqual(second[0].claimed_by, "publisher-b")
+
     async def test_inbox_same_digest_is_noop_but_digest_drift_is_conflict(self) -> None:
         inbox = MemoryInboxStore()
         record = InboxRecord(
