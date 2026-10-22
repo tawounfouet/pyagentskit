@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import unittest
 from collections.abc import Mapping, Sequence
 from contextlib import AbstractAsyncContextManager
