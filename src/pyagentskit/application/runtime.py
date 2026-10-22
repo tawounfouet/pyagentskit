@@ -10,6 +10,7 @@ from ..domain import (
     NormalizedRuntimeEvent,
     RejectedCandidate,
     RejectionReason,
+    RuntimeBinding,
     RuntimeCancelRequest,
     RuntimeCancelResult,
     RuntimeCapability,
@@ -22,7 +23,11 @@ from ..domain import (
     RuntimeStartRequest,
     RuntimeStatus,
 )
-from ..domain.errors import CapabilityNegotiationError, RuntimeRegistrationError
+from ..domain.errors import (
+    CapabilityNegotiationError,
+    RuntimeBindingError,
+    RuntimeRegistrationError,
+)
 
 
 @runtime_checkable
@@ -118,7 +123,7 @@ class CapabilityNegotiator:
         if not compatible:
             raise CapabilityNegotiationError(self._failure_message(requirements, rejected))
 
-        def score(candidate: RuntimeCandidate) -> tuple[int, int, int, int, int]:
+        def score(candidate: RuntimeCandidate) -> tuple[int, int, int, int]:
             descriptor = candidate.descriptor
             preferred_index = (
                 len(selection_policy.preferred_runtime_ids)
@@ -134,10 +139,6 @@ class CapabilityNegotiator:
                 else 0,
                 preferred_matches,
                 preferred_index,
-                1
-                if selection_policy.prefer_native
-                and descriptor.runtime_id.startswith("pyagentskit/native@")
-                else 0,
             )
 
         selected = sorted(
@@ -201,6 +202,22 @@ class CapabilityNegotiator:
         )
         requested = requirements.runtime_id or requirements.runtime_family or "any runtime"
         return f"no runtime satisfies {requested}: {details or 'registry is empty'}"
+
+
+class RuntimeBindingPolicy:
+    """Protect the durable runtime family chosen for one Run."""
+
+    @staticmethod
+    def validate_candidate(current: RuntimeBinding, candidate: RuntimeDescriptor) -> None:
+        """Reject silent runtime-family changes for an existing binding."""
+
+        if current.runtime_family is None:
+            return
+        if candidate.runtime_family != current.runtime_family:
+            raise RuntimeBindingError(
+                "runtime family cannot change silently: "
+                f"{current.runtime_family!r} -> {candidate.runtime_family!r}"
+            )
 
 
 @runtime_checkable
