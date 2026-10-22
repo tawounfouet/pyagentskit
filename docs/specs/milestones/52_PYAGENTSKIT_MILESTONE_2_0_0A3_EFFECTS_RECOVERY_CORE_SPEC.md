@@ -4,7 +4,7 @@
 **Version du document :** 1.0  
 **Date :** 22 octobre 2026  
 **Release cible :** `2.0.0a3`  
-**Statut :** **IMPLEMENTED — QUALIFICATION IN PROGRESS**  
+**Statut :** **QUALIFIED — RELEASE PENDING**  
 **Projet :** PyAgentsKit V2
 
 > **Faire des side effects réels, de l’ambiguïté et de la recovery des concepts first-class capables de survivre aux crashs sans répétition aveugle.**
@@ -135,48 +135,48 @@ failure tests when relevant
 
 ## 7.1 Architecture
 
-- [ ] Vérifier que les composants du milestone respectent la topologie DDD/hexagonale.
-- [ ] Vérifier les dépendances autorisées entre Domain, Application, Adapters, API et Bootstrap.
-- [ ] Introduire un ADR uniquement si une décision structurante n’est pas déjà couverte.
-- [ ] Éviter tout couplage à un provider spécifique dans le Domain.
+- [x] Vérifier que les composants du milestone respectent la topologie DDD/hexagonale.
+- [x] Vérifier les dépendances autorisées entre Domain, Application, Adapters, API et Bootstrap.
+- [x] Introduire un ADR uniquement si une décision structurante n’est pas déjà couverte.
+- [x] Éviter tout couplage à un provider spécifique dans le Domain.
 
 ## 7.2 Domaine / contrats
 
-- [ ] Implémenter les objets et contracts explicitement inclus dans le scope.
-- [ ] Rendre les transitions critiques explicites.
-- [ ] Stabiliser les Value Objects nécessaires au milestone.
-- [ ] Préserver les distinctions sémantiques V2.
+- [x] Implémenter les objets et contracts explicitement inclus dans le scope.
+- [x] Rendre les transitions critiques explicites.
+- [x] Stabiliser les Value Objects nécessaires au milestone.
+- [x] Préserver les distinctions sémantiques V2.
 
 ## 7.3 Application
 
-- [ ] Créer les use cases nécessaires.
-- [ ] Orchestrer les Ports sans importer d’adapter concret.
-- [ ] Définir clairement les boundaries transactionnelles.
-- [ ] Rendre WAITING / MANUAL_INTERVENTION possibles lorsqu’ils constituent la réponse sûre.
+- [x] Créer les use cases nécessaires.
+- [x] Orchestrer les Ports sans importer d’adapter concret.
+- [x] Définir clairement les boundaries transactionnelles.
+- [x] Rendre WAITING / MANUAL_INTERVENTION possibles lorsqu’ils constituent la réponse sûre.
 
 ## 7.4 Adapters
 
-- [ ] Implémenter uniquement les adapters requis par ce milestone.
-- [ ] Normaliser leurs erreurs vers les erreurs PyAgentsKit.
-- [ ] Ne pas exposer les types SDK/providers au Domain.
-- [ ] Ajouter les Contract Tests associés.
+- [x] Implémenter uniquement les adapters requis par ce milestone.
+- [x] Normaliser leurs erreurs vers les erreurs PyAgentsKit.
+- [x] Ne pas exposer les types SDK/providers au Domain.
+- [x] Ajouter les Contract Tests associés.
 
 ## 7.5 Tests
 
-- [ ] Tests unitaires.
-- [ ] Tests de transitions invalides.
-- [ ] Tests de contracts.
-- [ ] Tests de failure si applicables.
-- [ ] Tests d’architecture.
-- [ ] Tests de packaging.
+- [x] Tests unitaires.
+- [x] Tests de transitions invalides.
+- [x] Tests de contracts.
+- [x] Tests de failure si applicables.
+- [x] Tests d’architecture.
+- [x] Tests de packaging.
 
 ## 7.6 Documentation
 
-- [ ] Mettre à jour le `../../ROADMAP.md`.
-- [ ] Mettre à jour le changelog.
-- [ ] Documenter les APIs nouvelles ou modifiées.
-- [ ] Documenter les limitations connues.
-- [ ] Ajouter au moins un exemple minimal représentatif.
+- [x] Mettre à jour le `../../ROADMAP.md`.
+- [x] Mettre à jour le changelog.
+- [x] Documenter les APIs nouvelles ou modifiées.
+- [x] Documenter les limitations connues.
+- [x] Ajouter au moins un exemple minimal représentatif.
 
 ---
 
@@ -226,16 +226,16 @@ Le milestone ne peut être considéré terminé que si :
 
 # 10. Definition of Done
 
-- [ ] Le scope obligatoire du milestone est implémenté.
-- [ ] Les invariants P0 associés possèdent des tests exécutables.
-- [ ] Les tests CI du niveau requis sont verts.
-- [ ] Les dépendances de packages respectent les règles d’architecture.
-- [ ] Les erreurs provider/infrastructure sont normalisées.
-- [ ] Les nouvelles surfaces publiques sont documentées.
-- [ ] Le package se construit de manière reproductible.
-- [ ] Un environnement propre peut installer/importer la release.
-- [ ] Le changelog contient les changements du milestone.
-- [ ] Les limites et non-goals sont explicitement documentés.
+- [x] Le scope obligatoire du milestone est implémenté.
+- [x] Les invariants P0 associés possèdent des tests exécutables.
+- [x] Les tests CI du niveau requis sont verts.
+- [x] Les dépendances de packages respectent les règles d’architecture.
+- [x] Les erreurs provider/infrastructure sont normalisées.
+- [x] Les nouvelles surfaces publiques sont documentées.
+- [x] Le package se construit de manière reproductible.
+- [x] Un environnement propre peut installer/importer la release.
+- [x] Le changelog contient les changements du milestone.
+- [x] Les limites et non-goals sont explicitement documentés.
 
 ---
 
@@ -287,15 +287,15 @@ test evidence
 
 Checklist :
 
-- [ ] version `pyproject.toml` mise à jour ;
-- [ ] build wheel ;
-- [ ] build sdist ;
-- [ ] installation en environnement vierge ;
-- [ ] smoke import ;
-- [ ] tests verts ;
-- [ ] checksums ;
+- [x] version `pyproject.toml` mise à jour ;
+- [x] build wheel ;
+- [x] build sdist ;
+- [x] installation en environnement vierge ;
+- [x] smoke import ;
+- [x] tests verts ;
+- [x] checksums ;
 - [ ] tag Git correspondant ;
-- [ ] release notes.
+- [x] release notes.
 
 ---
 
@@ -444,14 +444,14 @@ Risques communs à surveiller :
 Avant clôture :
 
 ```text
-[ ] Le milestone conserve les bounded contexts.
-[ ] Le Domain ne dépend d’aucune infrastructure.
-[ ] Les Ports sont au bon niveau.
-[ ] Les Adapters restent remplaçables.
-[ ] Les invariants critiques sont testés.
-[ ] Aucun raccourci provider-specific n’a contaminé le Core.
-[ ] Le modèle de failure est explicite.
-[ ] Les non-goals sont respectés.
+[x] Le milestone conserve les bounded contexts.
+[x] Le Domain ne dépend d’aucune infrastructure.
+[x] Les Ports sont au bon niveau.
+[x] Les Adapters restent remplaçables.
+[x] Les invariants critiques sont testés.
+[x] Aucun raccourci provider-specific n’a contaminé le Core.
+[x] Le modèle de failure est explicite.
+[x] Les non-goals sont respectés.
 ```
 
 ---
@@ -461,15 +461,15 @@ Avant clôture :
 Avant tag :
 
 ```text
-[ ] CI green
-[ ] tests requis green
-[ ] package build green
-[ ] fresh install green
-[ ] changelog à jour
-[ ] docs à jour
-[ ] aucun P0 defect ouvert
-[ ] migration/compat vérifiée si applicable
-[ ] checksums générés
+[x] CI green
+[x] tests requis green
+[x] package build green
+[x] fresh install green
+[x] changelog à jour
+[x] docs à jour
+[x] aucun P0 defect ouvert
+[x] migration/compat vérifiée si applicable
+[x] checksums générés
 ```
 
 ---
