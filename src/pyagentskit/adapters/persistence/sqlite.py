@@ -27,7 +27,15 @@ from ...domain.effects import (
     ReconciliationCase,
     ReconciliationEvidence,
 )
-from ...domain.entities import Approval, AuditEvent, Lease, MemoryEntry, Run
+from ...domain.entities import (
+    Approval,
+    AuditEvent,
+    Lease,
+    MemoryEntry,
+    Run,
+    RuntimeBinding,
+    RuntimeInvocation,
+)
 from ...domain.errors import (
     ConcurrencyConflictError,
     DuplicateAggregateError,
@@ -44,6 +52,8 @@ from ...domain.shared import (
     FencingToken,
     MemoryEntryId,
     RunId,
+    RuntimeBindingId,
+    RuntimeInvocationId,
 )
 from ._codec import (
     approval_from_document,
@@ -65,6 +75,10 @@ from ._codec import (
     reconciliation_evidence_to_document,
     run_from_document,
     run_to_document,
+    runtime_binding_from_document,
+    runtime_binding_to_document,
+    runtime_invocation_from_document,
+    runtime_invocation_to_document,
 )
 
 ResultT = TypeVar("ResultT")
@@ -700,6 +714,125 @@ class SQLiteLeaseRepository(_SQLiteRepository):
         return await self._db.atomic(operation)
 
 
+class SQLiteRuntimeRepository(_SQLiteRepository):
+    async def get_binding(
+        self,
+        binding_id: RuntimeBindingId,
+    ) -> RuntimeBinding | None:
+        def operation() -> RuntimeBinding | None:
+            row = self._db.connection.execute(
+                "SELECT payload_json FROM v2_runtime_bindings WHERE id=?",
+                (str(binding_id),),
+            ).fetchone()
+            return (
+                None
+                if row is None
+                else runtime_binding_from_document(loads(row["payload_json"]))
+            )
+
+        return await self._db.call(operation)
+
+    async def add_binding(self, binding: RuntimeBinding) -> None:
+        def operation() -> None:
+            try:
+                self._db.connection.execute(
+                    "INSERT INTO v2_runtime_bindings("
+                    "id,run_id,runtime_id,runtime_family,bound_at,payload_json"
+                    ") VALUES (?, ?, ?, ?, ?, ?)",
+                    (
+                        str(binding.id),
+                        None if binding.run_id is None else str(binding.run_id),
+                        binding.resolved_runtime_id,
+                        binding.runtime_family,
+                        binding.bound_at.isoformat(),
+                        dumps(runtime_binding_to_document(binding)),
+                    ),
+                )
+            except sqlite3.IntegrityError as exc:
+                raise DuplicateAggregateError(
+                    f"runtime binding {binding.id} already exists"
+                ) from exc
+
+        await self._db.call(operation)
+
+    async def get_invocation(
+        self,
+        invocation_id: RuntimeInvocationId,
+    ) -> RuntimeInvocation | None:
+        def operation() -> RuntimeInvocation | None:
+            row = self._db.connection.execute(
+                "SELECT payload_json FROM v2_runtime_invocations WHERE id=?",
+                (str(invocation_id),),
+            ).fetchone()
+            return (
+                None
+                if row is None
+                else runtime_invocation_from_document(loads(row["payload_json"]))
+            )
+
+        return await self._db.call(operation)
+
+    async def add_invocation(self, invocation: RuntimeInvocation) -> None:
+        def operation() -> None:
+            try:
+                self._db.connection.execute(
+                    "INSERT INTO v2_runtime_invocations("
+                    "id,run_id,binding_id,runtime_id,status,version,started_at,"
+                    "completed_at,payload_json"
+                    ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        str(invocation.id),
+                        str(invocation.run_id),
+                        str(invocation.binding_id),
+                        invocation.runtime_id,
+                        invocation.status.value,
+                        invocation.version.value,
+                        _iso(invocation.started_at),
+                        _iso(invocation.completed_at),
+                        dumps(runtime_invocation_to_document(invocation)),
+                    ),
+                )
+            except sqlite3.IntegrityError as exc:
+                raise DuplicateAggregateError(
+                    f"runtime invocation {invocation.id} already exists"
+                ) from exc
+
+        await self._db.call(operation)
+
+    async def save_invocation(
+        self,
+        invocation: RuntimeInvocation,
+        *,
+        expected_version: AggregateVersion,
+    ) -> None:
+        if invocation.version != expected_version.next():
+            raise ConcurrencyConflictError(
+                "saved aggregate version must advance by exactly one"
+            )
+
+        def operation() -> None:
+            cursor = self._db.connection.execute(
+                "UPDATE v2_runtime_invocations SET runtime_id=?,status=?,version=?,"
+                "started_at=?,completed_at=?,payload_json=? WHERE id=? AND version=?",
+                (
+                    invocation.runtime_id,
+                    invocation.status.value,
+                    invocation.version.value,
+                    _iso(invocation.started_at),
+                    _iso(invocation.completed_at),
+                    dumps(runtime_invocation_to_document(invocation)),
+                    str(invocation.id),
+                    expected_version.value,
+                ),
+            )
+            if cursor.rowcount != 1:
+                raise ConcurrencyConflictError(
+                    f"stale or missing runtime invocation {invocation.id}"
+                )
+
+        await self._db.call(operation)
+
+
 class SQLiteAuditStore(_SQLiteRepository):
     async def append(self, event: AuditEvent) -> None:
         def operation() -> None:
@@ -965,6 +1098,7 @@ class SQLiteUnitOfWork:
         self.memories = SQLiteMemoryRepository(self._db)
         self.reconciliations = SQLiteReconciliationRepository(self._db)
         self.approvals = SQLiteApprovalRepository(self._db)
+        self.runtimes = SQLiteRuntimeRepository(self._db)
         self.outbox = SQLiteOutboxStore(self._db)
         self.audit = SQLiteAuditStore(self._db)
         self._token: Token[bool] | None = None
@@ -1020,5 +1154,6 @@ __all__ = [
     "SQLiteOutboxStore",
     "SQLiteReconciliationRepository",
     "SQLiteRunRepository",
+    "SQLiteRuntimeRepository",
     "SQLiteUnitOfWork",
 ]
