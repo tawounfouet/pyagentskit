@@ -371,17 +371,13 @@ class CrashWindowTests(unittest.TestCase):
 
     def test_w2_durable_intent_before_send_can_restart_without_replay(self) -> None:
         intent = Effect()
-        plan = self.planner.plan(
-            recovery_context(effects=(intent,), snapshot=self.restartable)
-        )
+        plan = self.planner.plan(recovery_context(effects=(intent,), snapshot=self.restartable))
         self.assertEqual(intent.status, EffectStatus.NOT_STARTED)
         self.assertEqual(plan.next_action, NextAction.RESTART_RUNTIME)
 
     def test_w3_after_send_before_response_requires_reconciliation(self) -> None:
         started = Effect().begin()
-        plan = self.planner.plan(
-            recovery_context(effects=(started,), snapshot=self.restartable)
-        )
+        plan = self.planner.plan(recovery_context(effects=(started,), snapshot=self.restartable))
         self.assertEqual(plan.next_action, NextAction.RECONCILE_EFFECT)
 
     def test_w4_response_before_durable_outcome_requires_reconciliation(self) -> None:
@@ -398,9 +394,7 @@ class CrashWindowTests(unittest.TestCase):
             handle_valid=True,
             capabilities=frozenset({RuntimeCapability.RESUME}),
         )
-        plan = self.planner.plan(
-            recovery_context(effects=(succeeded,), snapshot=resumable)
-        )
+        plan = self.planner.plan(recovery_context(effects=(succeeded,), snapshot=resumable))
         self.assertEqual(plan.next_action, NextAction.RESUME_RUNTIME)
         self.assertFalse(succeeded.safe_to_replay)
 
