@@ -8,6 +8,7 @@ from pyagentskit.adapters.persistence import (
     MemoryApprovalRepository,
     MemoryArtifactRepository,
     MemoryAuditStore,
+    MemoryBlobStore,
     MemoryConversationRepository,
     MemoryEffectRepository,
     MemoryInboxStore,
@@ -18,6 +19,7 @@ from pyagentskit.adapters.persistence import (
     MemoryRuntimeRepository,
     MemorySessionRepository,
     MemoryUnitOfWork,
+    MemoryWorkerRepository,
 )
 from pyagentskit.contracts import (
     InboxRecord,
@@ -34,6 +36,7 @@ from pyagentskit.domain import (
     Conversation,
     ConversationMessage,
     DomainEvent,
+    DuplicateAggregateError,
     Effect,
     FencingToken,
     IdempotencyConflictError,
@@ -42,6 +45,8 @@ from pyagentskit.domain import (
     InputFingerprint,
     IntegrationEvent,
     Lease,
+    ReconciliationCase,
+    ReconciliationEvidence,
     MemoryEntry,
     MemoryScope,
     Run,
@@ -49,6 +54,7 @@ from pyagentskit.domain import (
     RuntimeBinding,
     RuntimeInvocation,
     Session,
+    Worker,
     WorkerId,
 )
 
@@ -354,6 +360,274 @@ class OtherRepositoryContractTests(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertNotEqual(type(domain_event), type(integration_event))
+
+
+class PersistenceConflictAndStoreCoverageTests(unittest.IsolatedAsyncioTestCase):
+    async def test_run_repository_rejects_duplicate_missing_and_non_incrementing_save(self) -> None:
+        repository = MemoryRunRepository()
+        run = Run()
+        await repository.add(run)
+
+        with self.assertRaises(DuplicateAggregateError):
+            await repository.add(run)
+        with self.assertRaises(ConcurrencyConflictError):
+            await repository.save(run, expected_version=run.version)
+        with self.assertRaises(ConcurrencyConflictError):
+            await MemoryRunRepository().save(
+                run.transition(RunStatus.RUNNING),
+                expected_version=run.version,
+            )
+
+    async def test_session_repository_save_and_conflicts(self) -> None:
+        repository = MemorySessionRepository()
+        session = Session()
+        await repository.add(session)
+        updated = replace(session, version=session.version.next())
+        await repository.save(updated, expected_version=session.version)
+        self.assertEqual(await repository.get(session.id), updated)
+
+        with self.assertRaises(DuplicateAggregateError):
+            await repository.add(updated)
+        with self.assertRaises(ConcurrencyConflictError):
+            await MemorySessionRepository().save(
+                updated,
+                expected_version=session.version,
+            )
+
+    async def test_conversation_repository_save_and_conflicts(self) -> None:
+        repository = MemoryConversationRepository()
+        conversation = Conversation()
+        await repository.add(conversation)
+        message = ConversationMessage(actor="agent", content="step")
+        updated = conversation.append(message)
+        await repository.save(updated, expected_version=conversation.version)
+
+        self.assertEqual(await repository.get(conversation.id), updated)
+        with self.assertRaises(DuplicateAggregateError):
+            await repository.add(updated)
+        with self.assertRaises(ConcurrencyConflictError):
+            await MemoryConversationRepository().save(
+                updated,
+                expected_version=conversation.version,
+            )
+
+    async def test_message_repository_get_and_duplicate(self) -> None:
+        repository = MemoryMessageRepository()
+        conversation = Conversation()
+        message = ConversationMessage(actor="human", content="hello")
+        await repository.append(conversation.id, message)
+
+        self.assertEqual(await repository.get(message.id), message)
+        with self.assertRaises(DuplicateAggregateError):
+            await repository.append(conversation.id, message)
+
+    async def test_effect_lookup_same_id_and_missing_save_paths(self) -> None:
+        repository = MemoryEffectRepository()
+        key = IdempotencyKey("run", "lookup")
+        effect = Effect(
+            idempotency_key=key,
+            fingerprint=InputFingerprint.from_text("payload"),
+        )
+        first = await repository.reserve(effect)
+        by_id = await repository.reserve(effect)
+        by_key = await repository.find_by_idempotency_key(
+            effect.idempotency_scope,
+            key,
+        )
+
+        self.assertTrue(first.created)
+        self.assertFalse(by_id.created)
+        self.assertEqual(by_key, effect)
+        self.assertIsNone(
+            await repository.find_by_idempotency_key(
+                effect.idempotency_scope,
+                IdempotencyKey("run", "missing"),
+            )
+        )
+
+        with self.assertRaises(ConcurrencyConflictError):
+            await MemoryEffectRepository().save(
+                effect.begin(),
+                expected_version=effect.version,
+            )
+
+    async def test_reconciliation_repository_create_update_and_evidence_conflicts(self) -> None:
+        repository = MemoryReconciliationRepository()
+        effect = Effect()
+        self.assertIsNone(await repository.get_active(effect.id))
+        case = ReconciliationCase(effect_id=effect.id, reason="ambiguous")
+        await repository.save(case, expected_version=None)
+
+        with self.assertRaises(DuplicateAggregateError):
+            await repository.save(case, expected_version=None)
+
+        running = case.start()
+        await repository.save(running, expected_version=case.version)
+        self.assertEqual(await repository.get_active(effect.id), running)
+
+        evidence = ReconciliationEvidence(
+            case_id=case.id,
+            summary="provider observation",
+        )
+        await repository.append_evidence(evidence)
+        with self.assertRaises(DuplicateAggregateError):
+            await repository.append_evidence(evidence)
+
+        with self.assertRaises(ConcurrencyConflictError):
+            await MemoryReconciliationRepository().save(
+                running,
+                expected_version=case.version,
+            )
+
+    async def test_approval_repository_duplicate_missing_and_pending_listing(self) -> None:
+        repository = MemoryApprovalRepository()
+        approval = Approval(subject="effect-x")
+        await repository.add(approval)
+        self.assertEqual(await repository.list_pending(), (approval,))
+
+        with self.assertRaises(DuplicateAggregateError):
+            await repository.add(approval)
+        with self.assertRaises(ConcurrencyConflictError):
+            await MemoryApprovalRepository().save(
+                approval.transition(ApprovalStatus.APPROVED),
+                expected_version=approval.version,
+            )
+
+    async def test_lease_duplicate_missing_and_release_paths(self) -> None:
+        repository = MemoryLeaseRepository()
+        token = await repository.next_fencing_token("run:x")
+        held = Lease(resource="run:x").acquire(WorkerId("worker-x"), token)
+        await repository.add(held)
+
+        with self.assertRaises(DuplicateAggregateError):
+            await repository.add(held)
+
+        released = held.release()
+        await repository.save(released, expected_version=held.version)
+        self.assertEqual(await repository.get_current("run:x"), released)
+
+        with self.assertRaises(ConcurrencyConflictError):
+            await MemoryLeaseRepository().save(
+                released,
+                expected_version=held.version,
+            )
+
+    async def test_worker_repository_roundtrip_cas_and_conflicts(self) -> None:
+        repository = MemoryWorkerRepository()
+        worker = Worker()
+        await repository.add(worker)
+        updated = replace(worker, version=worker.version.next())
+        await repository.save(updated, expected_version=worker.version)
+
+        self.assertEqual(await repository.get(worker.id), updated)
+        with self.assertRaises(DuplicateAggregateError):
+            await repository.add(updated)
+        with self.assertRaises(ConcurrencyConflictError):
+            await MemoryWorkerRepository().save(
+                updated,
+                expected_version=worker.version,
+            )
+
+    async def test_runtime_invocation_save_and_conflicts(self) -> None:
+        repository = MemoryRuntimeRepository()
+        binding = RuntimeBinding(runtime_id="runtime/test@1", runtime_family="test")
+        invocation = RuntimeInvocation(
+            binding_id=binding.id,
+            runtime_id=binding.resolved_runtime_id,
+            input="persist",
+        )
+        await repository.add_binding(binding)
+        await repository.add_invocation(invocation)
+        updated = replace(invocation, version=invocation.version.next())
+        await repository.save_invocation(
+            updated,
+            expected_version=invocation.version,
+        )
+
+        self.assertEqual(await repository.get_invocation(invocation.id), updated)
+        with self.assertRaises(DuplicateAggregateError):
+            await repository.add_binding(binding)
+        with self.assertRaises(DuplicateAggregateError):
+            await repository.add_invocation(updated)
+        with self.assertRaises(ConcurrencyConflictError):
+            await MemoryRuntimeRepository().save_invocation(
+                updated,
+                expected_version=invocation.version,
+            )
+
+    async def test_artifact_audit_and_blob_conflict_free_paths(self) -> None:
+        artifacts = MemoryArtifactRepository()
+        artifact = Artifact(name="payload.bin")
+        await artifacts.add(artifact)
+        with self.assertRaises(DuplicateAggregateError):
+            await artifacts.add(artifact)
+
+        audit = MemoryAuditStore()
+        self.assertEqual(await audit.list_for_subject("missing"), ())
+        event = AuditEvent(event_type="artifact.created", subject=str(artifact.id))
+        await audit.append(event)
+        self.assertEqual(await audit.list_for_subject(str(artifact.id)), (event,))
+
+        blobs = MemoryBlobStore()
+        self.assertEqual(await blobs.put("artifact/1", b"payload"), "artifact/1")
+        self.assertEqual(await blobs.get("artifact/1"), b"payload")
+        await blobs.delete("artifact/1")
+        with self.assertRaises(KeyError):
+            await blobs.get("artifact/1")
+
+    async def test_outbox_failure_duplicate_and_release_paths(self) -> None:
+        outbox = MemoryOutboxStore()
+        event = IntegrationEvent(name="effect.changed")
+        await outbox.append(event)
+        with self.assertRaises(DuplicateAggregateError):
+            await outbox.append(event)
+
+        claim = (await outbox.claim_batch(worker_id="publisher"))[0]
+        self.assertEqual(claim.status, OutboxStatus.CLAIMED)
+        await outbox.mark_failed(event.event_id, error="broker unavailable")
+
+        retry = (await outbox.claim_batch(worker_id="retry"))[0]
+        self.assertEqual(retry.status, OutboxStatus.CLAIMED)
+        await outbox.release_claim(event.event_id)
+        third = (await outbox.claim_batch(worker_id="third"))[0]
+        self.assertEqual(third.attempt_count, 3)
+
+    async def test_inbox_failed_path_and_missing_lookup(self) -> None:
+        inbox = MemoryInboxStore()
+        self.assertIsNone(await inbox.get("source", "missing"))
+        record = InboxRecord(
+            source="source",
+            external_event_id="evt",
+            digest="a" * 64,
+        )
+        await inbox.reserve(record)
+        await inbox.mark_failed("source", "evt", error="handler failed")
+        failed = await inbox.get("source", "evt")
+        self.assertIsNotNone(failed)
+        assert failed is not None
+        self.assertEqual(failed.status, InboxStatus.FAILED)
+        self.assertEqual(failed.last_error, "handler failed")
+
+    async def test_uow_exception_rolls_back_and_explicit_rollback_is_idempotent(self) -> None:
+        uow = MemoryUnitOfWork()
+        run = Run()
+
+        with self.assertRaisesRegex(RuntimeError, "boom"):
+            async with uow:
+                await uow.runs.add(run)
+                raise RuntimeError("boom")
+
+        self.assertIsNone(await uow.runs.get(run.id))
+        await uow.rollback()
+        await uow.rollback()
+
+    def test_event_validation_and_memory_scope_validation(self) -> None:
+        with self.assertRaises(ValueError):
+            DomainEvent(name="", aggregate_type="Run", aggregate_id="run")
+        with self.assertRaises(ValueError):
+            IntegrationEvent(name="")
+        with self.assertRaises(ValueError):
+            MemoryEntry(scope=MemoryScope.SESSION, key="missing-scope")
 
 
 if __name__ == "__main__":
