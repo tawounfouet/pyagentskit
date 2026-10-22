@@ -48,6 +48,7 @@ production-stores = [
 dev = [
   "httpx>=0.27,<1",
   "hypothesis>=6.120,<7",
+  "hatchling>=1.27,<1.30",
   "build>=1.2,<2",
   "mypy>=1.15,<2",
   "pytest>=8.3,<9",
