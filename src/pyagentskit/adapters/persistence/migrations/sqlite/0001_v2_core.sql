@@ -84,37 +84,6 @@ CREATE TABLE IF NOT EXISTS v2_fencing_counters (
     last_token INTEGER NOT NULL CHECK (last_token >= 0)
 );
 
-CREATE TABLE IF NOT EXISTS v2_runtime_bindings (
-    id TEXT PRIMARY KEY,
-    run_id TEXT,
-    runtime_id TEXT NOT NULL,
-    runtime_family TEXT,
-    bound_at TEXT NOT NULL,
-    payload_json TEXT NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS ix_v2_runtime_bindings_run
-ON v2_runtime_bindings(run_id);
-
-CREATE TABLE IF NOT EXISTS v2_runtime_invocations (
-    id TEXT PRIMARY KEY,
-    run_id TEXT NOT NULL,
-    binding_id TEXT NOT NULL,
-    runtime_id TEXT,
-    status TEXT NOT NULL,
-    version INTEGER NOT NULL CHECK (version >= 0),
-    started_at TEXT,
-    completed_at TEXT,
-    payload_json TEXT NOT NULL,
-    FOREIGN KEY (binding_id) REFERENCES v2_runtime_bindings(id) ON DELETE RESTRICT
-);
-
-CREATE INDEX IF NOT EXISTS ix_v2_runtime_invocations_run
-ON v2_runtime_invocations(run_id);
-
-CREATE INDEX IF NOT EXISTS ix_v2_runtime_invocations_binding
-ON v2_runtime_invocations(binding_id);
-
 CREATE TABLE IF NOT EXISTS v2_audit_events (
     id TEXT PRIMARY KEY,
     subject TEXT NOT NULL,
