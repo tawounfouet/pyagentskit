@@ -168,7 +168,7 @@ Not part of A4:
 ## Release-pending actions
 
 ```text
-[ ] include this evidence in a final qualified sdist
+[x] include this evidence in a final qualified sdist
 [ ] synchronize final SHA-256 manifests with the qualified release artifact
 [ ] mark PR #3 ready for review
 [ ] merge PR #3
