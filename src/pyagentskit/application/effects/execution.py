@@ -8,9 +8,9 @@ from ...contracts.audit import AuditSink
 from ...contracts.effects import EffectRepository
 from ...domain.effects import Effect
 from ...domain.entities import AuditEvent
-from ...domain.errors import ReconciliationError
+from ...domain.errors import InvalidTransitionError, ReconciliationError
 from ...domain.lifecycle import EffectStatus
-from ...domain.shared import ExternalReference, OwnershipContext
+from ...domain.shared import ExternalReference, OwnershipContext, utc_now
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,6 +40,15 @@ class EffectExecutionGate:
         ownership: OwnershipContext | None = None,
         protected: bool = False,
     ) -> EffectPreparation:
+        if protected:
+            if ownership is None:
+                raise InvalidTransitionError("protected effect requires ownership")
+            if ownership.expires_at <= utc_now():
+                raise InvalidTransitionError("protected effect ownership has expired")
+            resource = ownership.resource_identity
+            if resource.resource_type == "run" and resource.resource_id != str(effect.run_id):
+                raise InvalidTransitionError("ownership does not protect this Effect run")
+
         reservation = await self._effects.reserve(effect)
         durable = reservation.effect
         durable.assert_same_intent(effect.idempotency_key, effect.fingerprint)
