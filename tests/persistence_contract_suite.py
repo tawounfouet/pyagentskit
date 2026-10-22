@@ -17,7 +17,6 @@ from pyagentskit.domain import (
     RuntimeBinding,
     RuntimeInvocation,
 )
-)
 
 
 class PersistenceContractSuiteMixin:
