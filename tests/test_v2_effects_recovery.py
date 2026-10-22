@@ -8,7 +8,6 @@ from pyagentskit.adapters import NativeRuntimeAdapter, NativeRuntimeEngine
 from pyagentskit.application import PlanRecovery, ReconcileEffect, RuntimeRecoveryExecutor
 from pyagentskit.domain import (
     Approval,
-    ApprovalStatus,
     Effect,
     EffectKind,
     EffectRiskLevel,
