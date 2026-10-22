@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 from pyagentskit.contracts import InboxRecord, OutboxStatus
 from pyagentskit.domain import (
     ConcurrencyConflictError,
+    DuplicateAggregateError,
     Effect,
     IdempotencyConflictError,
     IdempotencyKey,
@@ -11,6 +14,9 @@ from pyagentskit.domain import (
     IntegrationEvent,
     Run,
     RunStatus,
+    RuntimeBinding,
+    RuntimeInvocation,
+)
 )
 
 
@@ -21,6 +27,9 @@ class PersistenceContractSuiteMixin:
         raise NotImplementedError
 
     async def make_effect_repository(self):
+        raise NotImplementedError
+
+    async def make_runtime_repository(self):
         raise NotImplementedError
 
     async def make_outbox_store(self):
@@ -76,6 +85,47 @@ class PersistenceContractSuiteMixin:
                     idempotency_key=key,
                     fingerprint=InputFingerprint.from_text("payload=43"),
                 )
+            )
+
+    async def test_contract_runtime_binding_is_immutable_and_invocation_uses_cas(self) -> None:
+        runs = await self.make_run_repository()
+        runtimes = await self.make_runtime_repository()
+        run = Run()
+        await runs.add(run)
+
+        binding = RuntimeBinding(
+            run_id=run.id,
+            runtime_id="contract/runtime@1",
+            runtime_family="contract",
+        )
+        await runtimes.add_binding(binding)
+        self.assertEqual(await runtimes.get_binding(binding.id), binding)
+
+        with self.assertRaises(DuplicateAggregateError):
+            await runtimes.add_binding(binding)
+
+        invocation = RuntimeInvocation(
+            run_id=run.id,
+            binding_id=binding.id,
+            input="contract-work",
+            runtime_id=binding.resolved_runtime_id,
+        )
+        await runtimes.add_invocation(invocation)
+        self.assertEqual(await runtimes.get_invocation(invocation.id), invocation)
+
+        updated = replace(
+            invocation,
+            version=invocation.version.next(),
+        )
+        await runtimes.save_invocation(
+            updated,
+            expected_version=invocation.version,
+        )
+
+        with self.assertRaises(ConcurrencyConflictError):
+            await runtimes.save_invocation(
+                updated,
+                expected_version=invocation.version,
             )
 
     async def test_contract_outbox_claim_can_be_recovered_after_publisher_crash(self) -> None:
