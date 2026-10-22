@@ -140,6 +140,13 @@ class RecoveryPlanner:
                 ),
             )
 
+        if context.known_irrecoverable_failure:
+            return self._plan(
+                context,
+                NextAction.FAIL_RUN,
+                "authoritative state proves an irrecoverable failure",
+            )
+
         snapshot = context.runtime_snapshot
         if snapshot is not None and snapshot.resumable:
             invocation_id = (
@@ -168,13 +175,6 @@ class RecoveryPlanner:
                 context,
                 NextAction.COMPLETE_RUN,
                 "all durable completion conditions are satisfied",
-            )
-
-        if context.known_irrecoverable_failure:
-            return self._plan(
-                context,
-                NextAction.FAIL_RUN,
-                "authoritative state proves an irrecoverable failure",
             )
 
         blocker = RecoveryBlocker(
