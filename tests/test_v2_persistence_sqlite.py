@@ -80,8 +80,7 @@ class SQLitePersistenceTests(unittest.IsolatedAsyncioTestCase):
         try:
             connection.executescript(migration_v1)
             before = connection.execute(
-                "SELECT version FROM v2_schema_migrations "
-                "WHERE component='persistence_v2'"
+                "SELECT version FROM v2_schema_migrations WHERE component='persistence_v2'"
             ).fetchone()
             self.assertEqual(before, (1,))
         finally:
@@ -93,15 +92,12 @@ class SQLitePersistenceTests(unittest.IsolatedAsyncioTestCase):
         connection = sqlite3.connect(self.path)
         try:
             after = connection.execute(
-                "SELECT version FROM v2_schema_migrations "
-                "WHERE component='persistence_v2'"
+                "SELECT version FROM v2_schema_migrations WHERE component='persistence_v2'"
             ).fetchone()
             self.assertEqual(after, (2,))
             tables = {
                 row[0]
-                for row in connection.execute(
-                    "SELECT name FROM sqlite_master WHERE type='table'"
-                )
+                for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")
             }
             self.assertIn("v2_sessions", tables)
             self.assertIn("v2_runtime_invocations", tables)
