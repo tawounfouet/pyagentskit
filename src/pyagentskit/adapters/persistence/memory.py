@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass, replace
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from types import TracebackType
 
 from ...contracts.effects import EffectReservationResult
@@ -545,8 +545,14 @@ class MemoryOutboxStore:
         *,
         worker_id: str,
         limit: int = 100,
+        claim_timeout_seconds: float = 60.0,
     ) -> tuple[OutboxRecord, ...]:
+        if limit < 1:
+            raise ValueError("outbox claim limit must be positive")
+        if claim_timeout_seconds < 0:
+            raise ValueError("outbox claim timeout cannot be negative")
         now = datetime.now(UTC)
+        stale_before = now - timedelta(seconds=claim_timeout_seconds)
         selected: list[OutboxRecord] = []
         for event_id, record in sorted(
             self._records.items(),
@@ -554,7 +560,12 @@ class MemoryOutboxStore:
         ):
             if len(selected) >= limit:
                 break
-            if record.status not in {OutboxStatus.PENDING, OutboxStatus.FAILED}:
+            reclaimable = (
+                record.status is OutboxStatus.CLAIMED
+                and record.claimed_at is not None
+                and record.claimed_at <= stale_before
+            )
+            if record.status not in {OutboxStatus.PENDING, OutboxStatus.FAILED} and not reclaimable:
                 continue
             if record.next_attempt_at is not None and record.next_attempt_at > now:
                 continue
@@ -562,6 +573,7 @@ class MemoryOutboxStore:
                 record,
                 status=OutboxStatus.CLAIMED,
                 claimed_by=worker_id,
+                claimed_at=now,
                 attempt_count=record.attempt_count + 1,
             )
             self._records[event_id] = claimed
@@ -574,6 +586,7 @@ class MemoryOutboxStore:
             record,
             status=OutboxStatus.PUBLISHED,
             claimed_by=None,
+            claimed_at=None,
             published_at=utc_now(),
             last_error=None,
         )
@@ -584,6 +597,7 @@ class MemoryOutboxStore:
             record,
             status=OutboxStatus.FAILED,
             claimed_by=None,
+            claimed_at=None,
             last_error=error,
         )
 
@@ -593,6 +607,7 @@ class MemoryOutboxStore:
             record,
             status=OutboxStatus.PENDING,
             claimed_by=None,
+            claimed_at=None,
         )
 
 
