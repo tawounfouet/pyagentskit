@@ -220,7 +220,16 @@ class V2DomainFoundationTests(unittest.TestCase):
 
     def test_domain_does_not_import_infrastructure_layers(self) -> None:
         root = Path(__file__).parents[1] / "src" / "pyagentskit" / "domain"
-        forbidden = {"pyagentskit.adapters", "pyagentskit.api", "pyagentskit.compat"}
+        forbidden = {
+            "pyagentskit.adapters",
+            "pyagentskit.api",
+            "pyagentskit.application",
+            "pyagentskit.bootstrap",
+            "pyagentskit.compat",
+            "pyagentskit.postgres",
+            "pyagentskit.postgres_state",
+            "pyagentskit.providers",
+        }
 
         for path in root.rglob("*.py"):
             tree = ast.parse(path.read_text())
