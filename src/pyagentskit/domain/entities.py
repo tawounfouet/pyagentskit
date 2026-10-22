@@ -16,14 +16,17 @@ from .errors import InvalidTransitionError, StaleFencingTokenError
 from .lifecycle import (
     EFFECT_TRANSITIONS,
     RUN_TRANSITIONS,
+    WORKER_TRANSITIONS,
     ApprovalScope,
     ApprovalStatus,
     EffectStatus,
     LeaseStatus,
     RunStatus,
     RuntimeCapability,
+    WorkerStatus,
 )
 from .shared import (
+    ActorId,
     AggregateVersion,
     ApprovalId,
     ArtifactChecksum,
@@ -36,6 +39,7 @@ from .shared import (
     Fingerprint,
     LeaseId,
     MessageId,
+    ParticipantId,
     ReconciliationCaseId,
     RunId,
     RuntimeBindingId,
@@ -165,6 +169,41 @@ class Session:
     tenant_id: TenantId = field(default_factory=lambda: TenantId.new("tenant"))
     version: AggregateVersion = field(default_factory=AggregateVersion)
     created_at: datetime = field(default_factory=utc_now)
+
+
+@dataclass(frozen=True, slots=True)
+class Actor:
+    id: ActorId = field(default_factory=lambda: ActorId.new("actor"))
+    kind: str = ""
+    label: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.kind or not self.label:
+            raise ValueError("actor kind and label are required")
+
+
+@dataclass(frozen=True, slots=True)
+class Participant:
+    id: ParticipantId = field(default_factory=lambda: ParticipantId.new("participant"))
+    actor_id: ActorId = field(default_factory=lambda: ActorId.new("actor"))
+    role: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.role:
+            raise ValueError("participant role is required")
+
+
+@dataclass(frozen=True, slots=True)
+class Worker:
+    id: WorkerId = field(default_factory=lambda: WorkerId.new("worker"))
+    tenant_id: TenantId = field(default_factory=lambda: TenantId.new("tenant"))
+    status: WorkerStatus = WorkerStatus.ADMITTED
+    version: AggregateVersion = field(default_factory=AggregateVersion)
+    created_at: datetime = field(default_factory=utc_now)
+
+    def transition(self, status: WorkerStatus) -> Worker:
+        _versioned_transition(self.status, status, WORKER_TRANSITIONS)
+        return replace(self, status=status, version=self.version.next())
 
 
 @dataclass(frozen=True, slots=True)

@@ -1,6 +1,7 @@
 """Infrastructure-independent V2 domain model."""
 
 from .entities import (
+    Actor,
     Approval,
     Artifact,
     AuditEvent,
@@ -8,11 +9,13 @@ from .entities import (
     ConversationMessage,
     Effect,
     Lease,
+    Participant,
     ReconciliationCase,
     Run,
     RuntimeBinding,
     RuntimeInvocation,
     Session,
+    Worker,
 )
 from .lifecycle import (
     ApprovalScope,
@@ -21,8 +24,10 @@ from .lifecycle import (
     LeaseStatus,
     RunStatus,
     RuntimeCapability,
+    WorkerStatus,
 )
 from .shared import (
+    ActorId,
     AggregateVersion,
     ApprovalId,
     ArtifactChecksum,
@@ -36,6 +41,7 @@ from .shared import (
     Identifier,
     LeaseId,
     MessageId,
+    ParticipantId,
     ReconciliationCaseId,
     RunId,
     RuntimeBindingId,
@@ -46,6 +52,8 @@ from .shared import (
 )
 
 __all__ = [
+    "Actor",
+    "ActorId",
     "AggregateVersion",
     "Approval",
     "ApprovalId",
@@ -70,6 +78,8 @@ __all__ = [
     "LeaseId",
     "LeaseStatus",
     "MessageId",
+    "Participant",
+    "ParticipantId",
     "ReconciliationCase",
     "ReconciliationCaseId",
     "Run",
@@ -83,5 +93,7 @@ __all__ = [
     "Session",
     "SessionId",
     "TenantId",
+    "Worker",
     "WorkerId",
+    "WorkerStatus",
 ]

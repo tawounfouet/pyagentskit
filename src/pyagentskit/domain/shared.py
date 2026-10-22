@@ -46,6 +46,14 @@ class ConversationId(Identifier):
     pass
 
 
+class ActorId(Identifier):
+    pass
+
+
+class ParticipantId(Identifier):
+    pass
+
+
 class MessageId(Identifier):
     pass
 

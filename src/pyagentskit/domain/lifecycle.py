@@ -54,6 +54,13 @@ class LeaseStatus(StrEnum):
     EXPIRED = "expired"
 
 
+class WorkerStatus(StrEnum):
+    ADMITTED = "admitted"
+    READY = "ready"
+    DRAINING = "draining"
+    STOPPED = "stopped"
+
+
 class RuntimeCapability(StrEnum):
     INVOKE = "invoke"
     STREAM = "stream"
@@ -89,4 +96,11 @@ EFFECT_TRANSITIONS = {
     EffectStatus.SUCCEEDED: set(),
     EffectStatus.FAILED: set(),
     EffectStatus.UNKNOWN: set(),
+}
+
+WORKER_TRANSITIONS = {
+    WorkerStatus.ADMITTED: {WorkerStatus.READY, WorkerStatus.STOPPED},
+    WorkerStatus.READY: {WorkerStatus.DRAINING, WorkerStatus.STOPPED},
+    WorkerStatus.DRAINING: {WorkerStatus.STOPPED},
+    WorkerStatus.STOPPED: set(),
 }
