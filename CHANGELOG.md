@@ -15,6 +15,20 @@
 - Added contract tests for native runtime behavior, capability mismatch, exact selection and
   durable binding/invocation separation.
 
+### Changed
+
+- Completed the A1 domain foundation with typed `OwnershipContext`, `ResourceIdentity`,
+  `MessageRecipient` and an explicit reconciliation lifecycle.
+- Removed Native-specific preference logic from runtime negotiation; operator preference is now
+  expressed only through generic runtime IDs.
+- Enforced fail-closed runtime-family continuity for durable `RuntimeBinding` snapshots.
+- Classified the Native runtime as `BOUNDED` and stopped advertising `TOOL_INTERCEPTION`
+  until the V2 protected-effect contract is demonstrated.
+- Added property-based domain invariants, recursive architecture checks and a reusable runtime
+  adapter contract harness executed by Native and external-fake adapters.
+- Restored GitHub Actions qualification across Python 3.11, 3.12 and 3.13 with a true clean-wheel
+  installation check.
+
 ### Not Included
 
 - External runtime connectors, V2 persistence, complete recovery orchestration and plugin
