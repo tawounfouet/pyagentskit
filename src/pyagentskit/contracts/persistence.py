@@ -61,6 +61,7 @@ class OutboxRecord:
     attempt_count: int = 0
     next_attempt_at: datetime | None = None
     claimed_by: str | None = None
+    claimed_at: datetime | None = None
     published_at: datetime | None = None
     last_error: str | None = None
 
@@ -206,6 +207,7 @@ class OutboxStore(Protocol):
         *,
         worker_id: str,
         limit: int = 100,
+        claim_timeout_seconds: float = 60.0,
     ) -> tuple[OutboxRecord, ...]: ...
     async def mark_published(self, event_id: str) -> None: ...
     async def mark_failed(self, event_id: str, *, error: str) -> None: ...
