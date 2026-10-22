@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import sqlite3
 import tempfile
 import unittest
@@ -251,6 +252,30 @@ class SQLitePersistenceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(second[0].attempt_count, 2)
         self.assertEqual(second[0].claimed_by, "publisher-b")
         await reopened.close()
+
+    async def test_restored_started_effect_requires_reconciliation_before_reentry(self) -> None:
+        repository = SQLiteEffectRepository(self.path)
+        effect = Effect()
+        await repository.reserve(effect)
+        started = effect.begin()
+        await repository.save(started, expected_version=effect.version)
+        await repository.close()
+
+        restored_snapshot = Path(self._tmp.name) / "restored.sqlite3"
+        shutil.copy2(self.path, restored_snapshot)
+
+        live = SQLiteEffectRepository(self.path)
+        succeeded = started.mark_succeeded()
+        await live.save(succeeded, expected_version=started.version)
+        await live.close()
+
+        shutil.copy2(restored_snapshot, self.path)
+        restored = SQLiteEffectRepository(self.path)
+        recovered_effect = await restored.get(effect.id)
+        self.assertEqual(recovered_effect.status.value, "started")
+        self.assertTrue(recovered_effect.requires_reconciliation)
+        self.assertFalse(recovered_effect.safe_to_replay)
+        await restored.close()
 
     async def test_unit_of_work_rolls_back_domain_and_outbox_together(self) -> None:
         run = Run()
