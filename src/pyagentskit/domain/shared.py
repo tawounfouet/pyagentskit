@@ -90,6 +90,14 @@ class ReconciliationCaseId(Identifier):
     pass
 
 
+class ReconciliationEvidenceId(Identifier):
+    pass
+
+
+class RecoveryDecisionId(Identifier):
+    pass
+
+
 class AuditEventId(Identifier):
     pass
 
