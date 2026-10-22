@@ -1174,12 +1174,25 @@ class PostgresV2UnitOfWork:
         *,
         table_prefix: str = "pyagentskit",
     ) -> None:
+        from .postgres_catalog import (
+            PostgresV2ArtifactRepository,
+            PostgresV2ConversationRepository,
+            PostgresV2MessageRepository,
+            PostgresV2SessionRepository,
+            PostgresV2WorkerRepository,
+        )
+
         self._db = _PostgresV2Database(pool, table_prefix=table_prefix)
         self.runs = PostgresV2RunRepository(self._db)
+        self.sessions = PostgresV2SessionRepository(self._db)
+        self.conversations = PostgresV2ConversationRepository(self._db)
+        self.messages = PostgresV2MessageRepository(self._db)
         self.effects = PostgresV2EffectRepository(self._db)
         self.memories = PostgresV2MemoryRepository(self._db)
         self.reconciliations = PostgresV2ReconciliationRepository(self._db)
         self.approvals = PostgresV2ApprovalRepository(self._db)
+        self.workers = PostgresV2WorkerRepository(self._db)
+        self.artifacts = PostgresV2ArtifactRepository(self._db)
         self.runtimes = PostgresV2RuntimeRepository(self._db)
         self.outbox = PostgresV2OutboxStore(self._db)
         self.audit = PostgresV2AuditStore(self._db)
