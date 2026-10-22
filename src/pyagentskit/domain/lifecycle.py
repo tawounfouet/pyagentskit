@@ -61,6 +61,24 @@ class WorkerStatus(StrEnum):
     STOPPED = "stopped"
 
 
+class ReconciliationStatus(StrEnum):
+    PENDING = "pending"
+    RUNNING = "running"
+    RESOLVED_SUCCESS = "resolved_success"
+    RESOLVED_FAILURE = "resolved_failure"
+    MANUAL_REVIEW = "manual_review"
+    FAILED = "failed"
+
+    @property
+    def is_terminal(self) -> bool:
+        return self in {
+            self.RESOLVED_SUCCESS,
+            self.RESOLVED_FAILURE,
+            self.MANUAL_REVIEW,
+            self.FAILED,
+        }
+
+
 class RuntimeCapability(StrEnum):
     START = "start"
     CANCEL = "cancel"
