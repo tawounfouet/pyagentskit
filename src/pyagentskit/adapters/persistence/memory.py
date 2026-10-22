@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from types import TracebackType
 
@@ -258,17 +258,20 @@ class MemoryEffectRepository:
             )
             existing_id = self._idempotency.get(identity)
             if existing_id is not None:
-                existing = self._items[existing_id]
-                existing.assert_same_intent(
+                existing_by_key = self._items[existing_id]
+                existing_by_key.assert_same_intent(
                     effect.idempotency_key,
                     effect.fingerprint,
                 )
-                return EffectReservationResult(effect=existing, created=False)
+                return EffectReservationResult(effect=existing_by_key, created=False)
 
-        existing = self._items.get(effect.id)
-        if existing is not None:
-            existing.assert_same_intent(effect.idempotency_key, effect.fingerprint)
-            return EffectReservationResult(effect=existing, created=False)
+        existing_by_id = self._items.get(effect.id)
+        if existing_by_id is not None:
+            existing_by_id.assert_same_intent(
+                effect.idempotency_key,
+                effect.fingerprint,
+            )
+            return EffectReservationResult(effect=existing_by_id, created=False)
 
         self._items[effect.id] = effect
         if effect.idempotency_key is not None:
@@ -659,6 +662,19 @@ class MemoryBlobStore:
         self._items.pop(key, None)
 
 
+@dataclass(slots=True)
+class _MemoryUnitOfWorkSnapshot:
+    runs: dict[RunId, Run]
+    effects: dict[EffectId, Effect]
+    effect_idempotency: dict[tuple[IdempotencyScope, str], EffectId]
+    memories: dict[MemoryEntryId, MemoryEntry]
+    reconciliation_cases: dict[ReconciliationCaseId, ReconciliationCase]
+    reconciliation_evidence: dict[ReconciliationEvidenceId, ReconciliationEvidence]
+    approvals: dict[ApprovalId, Approval]
+    outbox: dict[str, OutboxRecord]
+    audit: list[AuditEvent]
+
+
 class MemoryUnitOfWork:
     """Reference local transaction boundary with rollback snapshots."""
 
@@ -671,20 +687,20 @@ class MemoryUnitOfWork:
         self.outbox = MemoryOutboxStore()
         self.audit = MemoryAuditStore()
         self._committed = False
-        self._snapshot: tuple[object, ...] | None = None
+        self._snapshot: _MemoryUnitOfWorkSnapshot | None = None
 
     async def __aenter__(self) -> MemoryUnitOfWork:
         self._committed = False
-        self._snapshot = (
-            deepcopy(self.runs._items),
-            deepcopy(self.effects._items),
-            deepcopy(self.effects._idempotency),
-            deepcopy(self.memories._items),
-            deepcopy(self.reconciliations._cases),
-            deepcopy(self.reconciliations._evidence),
-            deepcopy(self.approvals._items),
-            deepcopy(self.outbox._records),
-            deepcopy(self.audit._events),
+        self._snapshot = _MemoryUnitOfWorkSnapshot(
+            runs=deepcopy(self.runs._items),
+            effects=deepcopy(self.effects._items),
+            effect_idempotency=deepcopy(self.effects._idempotency),
+            memories=deepcopy(self.memories._items),
+            reconciliation_cases=deepcopy(self.reconciliations._cases),
+            reconciliation_evidence=deepcopy(self.reconciliations._evidence),
+            approvals=deepcopy(self.approvals._items),
+            outbox=deepcopy(self.outbox._records),
+            audit=deepcopy(self.audit._events),
         )
         return self
 
@@ -704,17 +720,16 @@ class MemoryUnitOfWork:
     async def rollback(self) -> None:
         if self._snapshot is None:
             return
-        (
-            self.runs._items,
-            self.effects._items,
-            self.effects._idempotency,
-            self.memories._items,
-            self.reconciliations._cases,
-            self.reconciliations._evidence,
-            self.approvals._items,
-            self.outbox._records,
-            self.audit._events,
-        ) = deepcopy(self._snapshot)
+        snapshot = self._snapshot
+        self.runs._items = deepcopy(snapshot.runs)
+        self.effects._items = deepcopy(snapshot.effects)
+        self.effects._idempotency = deepcopy(snapshot.effect_idempotency)
+        self.memories._items = deepcopy(snapshot.memories)
+        self.reconciliations._cases = deepcopy(snapshot.reconciliation_cases)
+        self.reconciliations._evidence = deepcopy(snapshot.reconciliation_evidence)
+        self.approvals._items = deepcopy(snapshot.approvals)
+        self.outbox._records = deepcopy(snapshot.outbox)
+        self.audit._events = deepcopy(snapshot.audit)
         self._snapshot = None
 
 
