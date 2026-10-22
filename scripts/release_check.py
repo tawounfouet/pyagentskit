@@ -235,6 +235,7 @@ def main() -> None:
         "-rs",
         pythonpath=ROOT / "src",
     )
+    run(sys.executable, "-m", "coverage", "report", "--fail-under=90")
     run(
         sys.executable,
         "scripts/benchmark_runtime.py",
