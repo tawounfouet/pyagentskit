@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
 from typing import Protocol, runtime_checkable
 
-from ..domain.effects import Effect, ReconciliationCase, ReconciliationEvidence
 from ..domain.entities import (
     Approval,
     Artifact,
@@ -23,16 +21,13 @@ from ..domain.entities import (
     Worker,
 )
 from ..domain.events import IntegrationEvent
-from ..domain.lifecycle import ApprovalStatus, RunStatus
+from ..domain.lifecycle import RunStatus
 from ..domain.shared import (
     AggregateVersion,
     ApprovalId,
     ArtifactId,
     ConversationId,
-    EffectId,
-    LeaseId,
     MessageId,
-    ReconciliationCaseId,
     RunId,
     RuntimeBindingId,
     RuntimeInvocationId,
