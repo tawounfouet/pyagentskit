@@ -43,7 +43,10 @@ additive and are exposed through `pyagentskit.domain`, `pyagentskit.application`
 
 ### Limitations
 
-- The native adapter currently supports start, status, cancellation, event streaming and tool
-  interception; native resume/checkpoint are not advertised until their semantics are qualified.
+- The native adapter currently advertises start, status, cancellation and event streaming.
+  `TOOL_INTERCEPTION`, native resume and native checkpoint are intentionally not advertised until
+  their V2 semantics are demonstrated by the corresponding contract tests.
+- The native adapter is currently classified `BOUNDED` for side-effect control. Promotion to
+  `FULL` requires proof that all relevant critical Effects are intercepted before execution.
 - V2 persistence, full recovery planning and external runtime connectors are deferred to later
   milestones.
