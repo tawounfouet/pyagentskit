@@ -136,9 +136,7 @@ class RecoveryContext:
 
     def pending_approvals(self) -> tuple[Approval, ...]:
         return tuple(
-            approval
-            for approval in self.approvals
-            if approval.status is ApprovalStatus.PENDING
+            approval for approval in self.approvals if approval.status is ApprovalStatus.PENDING
         )
 
 
