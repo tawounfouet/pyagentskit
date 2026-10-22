@@ -88,10 +88,9 @@ class NativeRuntimeAdapter(AgentRuntimeAdapter):
                     RuntimeCapability.STATUS,
                     RuntimeCapability.CANCEL,
                     RuntimeCapability.EVENT_STREAM,
-                    RuntimeCapability.TOOL_INTERCEPTION,
                 }
             ),
-            side_effect_control_level=SideEffectControlLevel.FULL,
+            side_effect_control_level=SideEffectControlLevel.BOUNDED,
             qualification_level=qualification_level,
         )
 
