@@ -195,6 +195,31 @@ Le Native Runtime Adapter couvre :
 
 ---
 
+# 6.1. Qualification effective en 2.0.0a2
+
+La surface réellement annoncée par le Native Runtime en `2.0.0a2` est volontairement
+conservatrice :
+
+```text
+START
+STATUS
+CANCEL
+EVENT_STREAM
+```
+
+Le niveau de contrôle des side effects est :
+
+```text
+BOUNDED
+```
+
+`TOOL_INTERCEPTION`, `RESUME` et `NATIVE_CHECKPOINT` restent des capacités cibles de
+l'adapter, mais ne sont pas annoncées tant que leur comportement V2 n'est pas démontré par les
+Contract Tests correspondants. En particulier, la réutilisation du ToolExecutor V1 ne suffit pas,
+à elle seule, à prouver le contrat V2 de protected Effect interception.
+
+---
+
 # 7. Non-goals
 
 Le Native Runtime Adapter ne doit pas :
