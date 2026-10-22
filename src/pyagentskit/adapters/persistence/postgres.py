@@ -24,6 +24,7 @@ from ...domain.entities import Approval, AuditEvent, Lease, MemoryEntry, Run
 from ...domain.errors import (
     ConcurrencyConflictError,
     DuplicateAggregateError,
+    IdempotencyConflictError,
     InboxDigestConflictError,
     PersistenceError,
 )
@@ -143,7 +144,9 @@ class _PostgresV2Database:
         except (
             ConcurrencyConflictError,
             DuplicateAggregateError,
+            IdempotencyConflictError,
             InboxDigestConflictError,
+            PersistenceError,
             KeyError,
             ValueError,
         ):
@@ -165,7 +168,9 @@ class _PostgresV2Database:
         except (
             ConcurrencyConflictError,
             DuplicateAggregateError,
+            IdempotencyConflictError,
             InboxDigestConflictError,
+            PersistenceError,
             KeyError,
             ValueError,
         ):
