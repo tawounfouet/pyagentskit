@@ -686,6 +686,8 @@ class _MemoryUnitOfWorkSnapshot:
     reconciliation_cases: dict[ReconciliationCaseId, ReconciliationCase]
     reconciliation_evidence: dict[ReconciliationEvidenceId, ReconciliationEvidence]
     approvals: dict[ApprovalId, Approval]
+    runtime_bindings: dict[RuntimeBindingId, RuntimeBinding]
+    runtime_invocations: dict[RuntimeInvocationId, RuntimeInvocation]
     outbox: dict[str, OutboxRecord]
     audit: list[AuditEvent]
 
@@ -699,6 +701,7 @@ class MemoryUnitOfWork:
         self.memories = InMemoryMemoryRepository()
         self.reconciliations = MemoryReconciliationRepository()
         self.approvals = MemoryApprovalRepository()
+        self.runtimes = MemoryRuntimeRepository()
         self.outbox = MemoryOutboxStore()
         self.audit = MemoryAuditStore()
         self._committed = False
@@ -714,6 +717,8 @@ class MemoryUnitOfWork:
             reconciliation_cases=deepcopy(self.reconciliations._cases),
             reconciliation_evidence=deepcopy(self.reconciliations._evidence),
             approvals=deepcopy(self.approvals._items),
+            runtime_bindings=deepcopy(self.runtimes._bindings),
+            runtime_invocations=deepcopy(self.runtimes._invocations),
             outbox=deepcopy(self.outbox._records),
             audit=deepcopy(self.audit._events),
         )
@@ -743,6 +748,8 @@ class MemoryUnitOfWork:
         self.reconciliations._cases = deepcopy(snapshot.reconciliation_cases)
         self.reconciliations._evidence = deepcopy(snapshot.reconciliation_evidence)
         self.approvals._items = deepcopy(snapshot.approvals)
+        self.runtimes._bindings = deepcopy(snapshot.runtime_bindings)
+        self.runtimes._invocations = deepcopy(snapshot.runtime_invocations)
         self.outbox._records = deepcopy(snapshot.outbox)
         self.audit._events = deepcopy(snapshot.audit)
         self._snapshot = None
