@@ -184,6 +184,30 @@ class RuntimeNegotiationTests(unittest.TestCase):
                 ),
             )
 
+    def test_incompatible_runtime_version_is_rejected_before_resume(self) -> None:
+        runtime = StubRuntime(
+            RuntimeDescriptor(
+                runtime_id="test/versioned@1",
+                display_name="Versioned",
+                runtime_family="test",
+                adapter_version="1.0.0",
+                runtime_version="2.0.0",
+                contract_version="2",
+                capabilities=frozenset({RuntimeCapability.START, RuntimeCapability.RESUME}),
+                side_effect_control_level=SideEffectControlLevel.BOUNDED,
+                qualification_level=RuntimeQualificationLevel.L1,
+            )
+        )
+
+        with self.assertRaises(CapabilityNegotiationError):
+            CapabilityNegotiator().negotiate(
+                RuntimeRequirements(
+                    required_capabilities=frozenset({RuntimeCapability.RESUME}),
+                    runtime_version="1.0.0",
+                ),
+                (RuntimeCandidate(runtime.descriptor, runtime),),
+            )
+
     def test_selection_is_deterministic_and_explainable(self) -> None:
         candidates = tuple(
             RuntimeCandidate(
