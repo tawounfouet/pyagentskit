@@ -117,9 +117,10 @@ class RecoveryContext:
             return False
         if self.ownership.expires_at <= self.now:
             return False
-        if self.current_worker_id is not None and self.ownership.worker_id != self.current_worker_id:
-            return False
-        return True
+        return not (
+            self.current_worker_id is not None
+            and self.ownership.worker_id != self.current_worker_id
+        )
 
     def unresolved_effects(self) -> tuple[Effect, ...]:
         return tuple(
@@ -168,7 +169,9 @@ class RecoveryPlan:
         if self.lease_id is None and self.fencing_token is None:
             return
         if ownership is None:
-            raise StaleRecoveryPlanError("recovery plan requires the ownership it was planned under")
+            raise StaleRecoveryPlanError(
+                "recovery plan requires the ownership it was planned under"
+            )
         effective_now = now or utc_now()
         if ownership.expires_at <= effective_now:
             raise StaleRecoveryPlanError("recovery plan ownership has expired")
