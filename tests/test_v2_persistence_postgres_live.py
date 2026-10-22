@@ -44,6 +44,13 @@ _GATE = os.getenv("PYAGENTSKIT_LIVE_POSTGRES") == "I_ACCEPT_DATABASE_WRITES" and
 )
 
 _SUFFIXES = (
+    "runtime_invocations",
+    "runtime_bindings",
+    "messages",
+    "conversations",
+    "sessions",
+    "workers",
+    "artifacts",
     "reconciliation_evidence",
     "reconciliation_cases",
     "effects",
