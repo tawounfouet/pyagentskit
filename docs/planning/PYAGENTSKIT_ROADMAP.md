@@ -402,7 +402,7 @@ Reuse where valid:
 
 # 2.0.0a3 — Effects & Recovery Core
 
-Status: **Next**
+Status: **Implemented — Qualification in progress**
 
 Goal:
 
