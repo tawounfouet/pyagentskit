@@ -6,6 +6,7 @@ from pyagentskit.domain import (
     Effect,
     EffectKind,
     FencingToken,
+    LeaseId,
     NextAction,
     OwnershipContext,
     RecoveryContext,
@@ -15,9 +16,6 @@ from pyagentskit.domain import (
     RunStatus,
     WorkerId,
 )
-from pyagentskit.domain.shared import LeaseId
-
-
 run = Run().transition(RunStatus.RUNNING)
 ownership = OwnershipContext(
     worker_id=WorkerId("worker-demo"),
