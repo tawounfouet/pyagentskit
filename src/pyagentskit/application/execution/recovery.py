@@ -4,10 +4,14 @@ from __future__ import annotations
 
 from ...contracts.audit import AuditSink
 from ...domain.entities import AuditEvent
-from ...domain.errors import RuntimeCapabilityError, StaleRecoveryPlanError
+from ...domain.errors import (
+    RuntimeBindingError,
+    RuntimeCapabilityError,
+    StaleRecoveryPlanError,
+)
 from ...domain.execution import NextAction, RecoveryContext, RecoveryPlan, RecoveryPlanner
 from ...domain.runtime import RuntimeHandle, RuntimeResumeRequest, RuntimeStartRequest
-from ..runtime import AgentRuntimeAdapter
+from ..runtime import AgentRuntimeAdapter, RuntimeBindingPolicy
 
 
 class PlanRecovery:
@@ -52,10 +56,22 @@ class RuntimeRecoveryExecutor:
             current.next_action != plan.next_action
             or current.target_effect_id != plan.target_effect_id
             or current.target_runtime_invocation_id != plan.target_runtime_invocation_id
+            or current.required_capabilities != plan.required_capabilities
+            or current.security_policy_version != plan.security_policy_version
         ):
             raise StaleRecoveryPlanError("recovery state changed; discard plan and replan")
 
         plan.assert_current_ownership(context.ownership, now=context.now)
+
+        binding = context.runtime_binding
+        if binding is None:
+            raise RuntimeBindingError("runtime recovery requires the durable RuntimeBinding")
+        RuntimeBindingPolicy.validate_candidate(binding, adapter.descriptor)
+        if adapter.descriptor.runtime_id != binding.resolved_runtime_id:
+            raise RuntimeBindingError(
+                "runtime recovery cannot silently replace the durable runtime binding"
+            )
+
         missing = plan.required_capabilities - adapter.descriptor.capabilities
         if missing:
             missing_names = sorted(item.value for item in missing)
