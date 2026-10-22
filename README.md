@@ -1,6 +1,6 @@
 # PyAgentsKit
 
-[![Release](https://img.shields.io/badge/release-2.0.0a2-blue)](#release-status)
+[![Version](https://img.shields.io/badge/version-2.0.0a2-blue)](#release-status)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](pyproject.toml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 

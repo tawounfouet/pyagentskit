@@ -4,7 +4,7 @@
 **Version du document :** 1.0  
 **Date :** 22 octobre 2026  
 **Release cible :** `2.0.0a2`  
-**Statut :** **IMPLEMENTED**
+**Statut :** **IMPLEMENTED — QUALIFICATION IN PROGRESS**
 **Projet :** PyAgentsKit V2
 
 > **Rendre les runtimes agentiques interchangeables via un contrat explicite, négocié par capabilities et indépendant des marques/frameworks.**
@@ -190,6 +190,10 @@ Les scénarios minimum pour `2.0.0a2` sont :
 - Même requirements + même registry → même sélection.
 - Native adapter passe exactement le même contrat qu’un adapter externe.
 - Upgrade incompatible → la négociation refuse le candidat avant resume.
+
+> Responsabilité : A2 prouve la compatibilité du candidat avant resume. Le refus autoritatif d'un
+> resume incompatible à partir du `RuntimeBinding` durable appartient au `RecoveryPlanner` de
+> `2.0.0a3`; A2 ne prétend pas implémenter Recovery V2.
 
 ## Niveaux de test
 

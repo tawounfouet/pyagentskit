@@ -15,7 +15,7 @@ from typing import Any
 from uuid import uuid4
 
 from .lifecycle import RuntimeCapability
-from .shared import RunId, utc_now
+from .shared import OwnershipContext, RunId, utc_now
 
 
 class SideEffectControlLevel(IntEnum):
@@ -170,7 +170,6 @@ class RuntimeSelectionPolicy:
     """Deterministic policy applied after hard requirements are satisfied."""
 
     preferred_runtime_ids: tuple[str, ...] = ()
-    prefer_native: bool = False
     prefer_highest_qualification: bool = True
     prefer_full_control: bool = True
     policy_version: str = "1"
@@ -210,7 +209,7 @@ class RuntimeStartRequest:
     conversation_id: str | None = None
     runtime_config_reference: str | None = None
     correlation_context: Mapping[str, str] = field(default_factory=dict)
-    ownership_context: Mapping[str, str] = field(default_factory=dict)
+    ownership_context: OwnershipContext | None = None
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -226,7 +225,7 @@ class RuntimeResumeRequest:
     runtime_checkpoint: RuntimeCheckpoint | None = None
     resume_input: str | None = None
     correlation_context: Mapping[str, str] = field(default_factory=dict)
-    ownership_context: Mapping[str, str] = field(default_factory=dict)
+    ownership_context: OwnershipContext | None = None
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
 

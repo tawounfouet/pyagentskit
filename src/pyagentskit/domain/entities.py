@@ -21,6 +21,7 @@ from .lifecycle import (
     ApprovalStatus,
     EffectStatus,
     LeaseStatus,
+    ReconciliationStatus,
     RunStatus,
     RuntimeCapability,
     WorkerStatus,
@@ -225,6 +226,19 @@ class ConversationMessage:
 
 
 @dataclass(frozen=True, slots=True)
+class MessageRecipient:
+    message_id: MessageId
+    actor_id: ActorId
+    recipient_type: str | None = None
+    created_at: datetime = field(default_factory=utc_now)
+    metadata: tuple[tuple[str, str], ...] = ()
+
+    def __post_init__(self) -> None:
+        if self.recipient_type is not None and not self.recipient_type:
+            raise ValueError("message recipient type cannot be empty")
+
+
+@dataclass(frozen=True, slots=True)
 class Conversation:
     id: ConversationId = field(default_factory=lambda: ConversationId.new("conversation"))
     session_id: SessionId = field(default_factory=lambda: SessionId.new("session"))
@@ -327,16 +341,47 @@ class ReconciliationCase:
     )
     effect_id: EffectId = field(default_factory=lambda: EffectId.new("effect"))
     reason: str = ""
-    resolved: bool = False
+    status: ReconciliationStatus = ReconciliationStatus.PENDING
     resolution: str | None = None
+    version: AggregateVersion = field(default_factory=AggregateVersion)
+    created_at: datetime = field(default_factory=utc_now)
 
     def __post_init__(self) -> None:
         if not self.reason:
             raise ValueError("reconciliation reason is required")
+        if self.status.is_terminal and not self.resolution:
+            raise ValueError("terminal reconciliation requires a resolution")
 
-    def resolve(self, resolution: str) -> ReconciliationCase:
-        if self.resolved:
+    @property
+    def resolved(self) -> bool:
+        """Compatibility view over the explicit reconciliation lifecycle."""
+
+        return self.status.is_terminal
+
+    def start(self) -> ReconciliationCase:
+        if self.status is not ReconciliationStatus.PENDING:
+            raise InvalidTransitionError("only a pending reconciliation can start")
+        return replace(
+            self,
+            status=ReconciliationStatus.RUNNING,
+            version=self.version.next(),
+        )
+
+    def resolve(
+        self,
+        resolution: str,
+        *,
+        status: ReconciliationStatus = ReconciliationStatus.RESOLVED_SUCCESS,
+    ) -> ReconciliationCase:
+        if self.status.is_terminal:
             raise InvalidTransitionError("reconciliation case is already resolved")
         if not resolution:
             raise ValueError("reconciliation resolution is required")
-        return replace(self, resolved=True, resolution=resolution)
+        if not status.is_terminal:
+            raise InvalidTransitionError("reconciliation resolution must be terminal")
+        return replace(
+            self,
+            status=status,
+            resolution=resolution,
+            version=self.version.next(),
+        )

@@ -4,7 +4,7 @@
 **Version du document :** 1.0  
 **Date :** 22 octobre 2026  
 **Release cible :** `2.0.0a1`  
-**Statut :** **NEXT**  
+**Statut :** **IMPLEMENTED — QUALIFICATION IN PROGRESS**  
 **Projet :** PyAgentsKit V2
 
 > **Établir le modèle métier V2 autonome de PyAgentsKit et encoder les invariants de fiabilité avant toute dépendance d’infrastructure.**

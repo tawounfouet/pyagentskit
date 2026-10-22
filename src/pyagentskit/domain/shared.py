@@ -147,6 +147,36 @@ class ExternalReference:
 
 
 @dataclass(frozen=True, slots=True)
+class ResourceIdentity:
+    """Stable identity of a resource protected by coordination/fencing."""
+
+    resource_type: str
+    resource_id: str
+    namespace: str | None = None
+
+    def __post_init__(self) -> None:
+        if not self.resource_type or not self.resource_id:
+            raise ValueError("resource identity type and id are required")
+        if self.namespace is not None and not self.namespace:
+            raise ValueError("resource identity namespace cannot be empty")
+
+
+@dataclass(frozen=True, slots=True)
+class OwnershipContext:
+    """Authoritative ownership evidence propagated to protected boundaries."""
+
+    worker_id: WorkerId
+    lease_id: LeaseId
+    resource_identity: ResourceIdentity
+    fencing_token: FencingToken
+    expires_at: datetime
+
+    def __post_init__(self) -> None:
+        if self.expires_at.tzinfo is None or self.expires_at.utcoffset() is None:
+            raise ValueError("ownership expiry must be timezone-aware")
+
+
+@dataclass(frozen=True, slots=True)
 class ArtifactChecksum:
     """Integrity checksum for an artifact."""
 

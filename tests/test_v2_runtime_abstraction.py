@@ -8,6 +8,7 @@ from pyagentskit.adapters import NativeRuntimeAdapter, NativeRuntimeEngine
 from pyagentskit.application import (
     CapabilityNegotiator,
     InMemoryRuntimeRegistry,
+    RuntimeBindingPolicy,
     RuntimeCandidate,
 )
 from pyagentskit.domain import (
@@ -25,12 +26,14 @@ from pyagentskit.domain import (
     RuntimeQualificationLevel,
     RuntimeRequirements,
     RuntimeResumeRequest,
+    RuntimeSelectionPolicy,
     RuntimeStartRequest,
     RuntimeStatus,
     SideEffectControlLevel,
 )
 from pyagentskit.domain.errors import (
     RuntimeAdapterError,
+    RuntimeBindingError,
     RuntimeCapabilityError,
     RuntimeRegistrationError,
 )
@@ -181,6 +184,30 @@ class RuntimeNegotiationTests(unittest.TestCase):
                 ),
             )
 
+    def test_incompatible_runtime_version_is_rejected_before_resume(self) -> None:
+        runtime = StubRuntime(
+            RuntimeDescriptor(
+                runtime_id="test/versioned@1",
+                display_name="Versioned",
+                runtime_family="test",
+                adapter_version="1.0.0",
+                runtime_version="2.0.0",
+                contract_version="2",
+                capabilities=frozenset({RuntimeCapability.START, RuntimeCapability.RESUME}),
+                side_effect_control_level=SideEffectControlLevel.BOUNDED,
+                qualification_level=RuntimeQualificationLevel.L1,
+            )
+        )
+
+        with self.assertRaises(CapabilityNegotiationError):
+            CapabilityNegotiator().negotiate(
+                RuntimeRequirements(
+                    required_capabilities=frozenset({RuntimeCapability.RESUME}),
+                    runtime_version="1.0.0",
+                ),
+                (RuntimeCandidate(runtime.descriptor, runtime),),
+            )
+
     def test_selection_is_deterministic_and_explainable(self) -> None:
         candidates = tuple(
             RuntimeCandidate(
@@ -210,6 +237,92 @@ class RuntimeNegotiationTests(unittest.TestCase):
 
         self.assertEqual(first.selected_runtime_id, second.selected_runtime_id)
         self.assertIn(first.selected_runtime_id or "", first.reason)
+
+    def test_preferred_capability_ranks_before_qualification(self) -> None:
+        preferred = StubRuntime(
+            descriptor(
+                "test/preferred@1",
+                capabilities=frozenset(
+                    {RuntimeCapability.START, RuntimeCapability.STRUCTURED_OUTPUT}
+                ),
+                qualification=RuntimeQualificationLevel.L1,
+            )
+        )
+        highly_qualified = StubRuntime(
+            descriptor(
+                "test/qualified@1",
+                capabilities=frozenset({RuntimeCapability.START}),
+                qualification=RuntimeQualificationLevel.L4,
+            )
+        )
+        result = CapabilityNegotiator().negotiate(
+            RuntimeRequirements(
+                required_capabilities=frozenset({RuntimeCapability.START}),
+                preferred_capabilities=frozenset({RuntimeCapability.STRUCTURED_OUTPUT}),
+            ),
+            (
+                RuntimeCandidate(highly_qualified.descriptor, highly_qualified),
+                RuntimeCandidate(preferred.descriptor, preferred),
+            ),
+        )
+
+        self.assertEqual(result.selected_runtime_id, "test/preferred@1")
+
+    def test_operator_preference_is_generic_and_does_not_privilege_native(self) -> None:
+        first = StubRuntime(
+            descriptor(
+                "vendor/first@1",
+                capabilities=frozenset({RuntimeCapability.START}),
+            )
+        )
+        second = StubRuntime(
+            descriptor(
+                "vendor/second@1",
+                capabilities=frozenset({RuntimeCapability.START}),
+            )
+        )
+        requirements = RuntimeRequirements(
+            required_capabilities=frozenset({RuntimeCapability.START})
+        )
+        result = CapabilityNegotiator().negotiate(
+            requirements,
+            (
+                RuntimeCandidate(first.descriptor, first),
+                RuntimeCandidate(second.descriptor, second),
+            ),
+            RuntimeSelectionPolicy(preferred_runtime_ids=("vendor/second@1",)),
+        )
+
+        self.assertEqual(result.selected_runtime_id, "vendor/second@1")
+
+    def test_binding_policy_rejects_silent_runtime_family_switch(self) -> None:
+        binding = RuntimeBinding(
+            runtime_id="vendor/runtime@1",
+            runtime_family="family-a",
+        )
+        same_family = RuntimeDescriptor(
+            runtime_id="vendor/runtime@2",
+            display_name="Compatible",
+            runtime_family="family-a",
+            adapter_version="2",
+            contract_version="2",
+        )
+        other_family = RuntimeDescriptor(
+            runtime_id="other/runtime@1",
+            display_name="Other",
+            runtime_family="family-b",
+            adapter_version="1",
+            contract_version="2",
+        )
+
+        RuntimeBindingPolicy.validate_candidate(binding, same_family)
+        with self.assertRaises(RuntimeBindingError):
+            RuntimeBindingPolicy.validate_candidate(binding, other_family)
+        with self.assertRaises(RuntimeBindingError):
+            RuntimeBindingPolicy.validate_candidate(
+                RuntimeBinding(runtime_name="legacy"),
+                same_family,
+            )
 
     def test_registry_rejects_collisions_and_lists_canonically(self) -> None:
         registry = InMemoryRuntimeRegistry()
@@ -251,7 +364,11 @@ class RuntimeContractTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(adapter.descriptor.capabilities, frozenset)
         self.assertNotIn(RuntimeCapability.RESUME, adapter.descriptor.capabilities)
         self.assertNotIn(RuntimeCapability.NATIVE_CHECKPOINT, adapter.descriptor.capabilities)
-        self.assertEqual(adapter.descriptor.side_effect_control_level, SideEffectControlLevel.FULL)
+        self.assertNotIn(RuntimeCapability.TOOL_INTERCEPTION, adapter.descriptor.capabilities)
+        self.assertEqual(
+            adapter.descriptor.side_effect_control_level,
+            SideEffectControlLevel.BOUNDED,
+        )
 
         request = RuntimeStartRequest(input="hello")
         handle = await adapter.start(request)

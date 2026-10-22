@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - "remediation/**"
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install development dependencies
+        run: python -m pip install -e ".[dev]"
+      - name: Lint
+        run: python -m ruff check .
+      - name: Format
+        run: python -m ruff format --check src tests scripts
+      - name: Typecheck
+        run: python -m mypy src
+      - name: Compile
+        run: python -m compileall -q src
+
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install development dependencies
+        run: python -m pip install -e ".[dev]"
+      - name: Unit, property, architecture and contract tests
+        run: python -m pytest -p pytest_cov -q -rs
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install build tools
+        run: python -m pip install "build>=1.2,<2" "twine>=6,<7"
+      - name: Build
+        run: python -m build
+      - name: Validate distributions
+        run: python -m twine check dist/*
+      - name: True fresh install
+        shell: bash
+        run: |
+          python -m venv /tmp/pyagentskit-clean
+          /tmp/pyagentskit-clean/bin/python -m pip install --upgrade pip
+          /tmp/pyagentskit-clean/bin/pip install dist/pyagentskit-2.0.0a2-py3-none-any.whl
+          /tmp/pyagentskit-clean/bin/python -c "import pyagentskit; assert pyagentskit.__version__ == '2.0.0a2'"
+          /tmp/pyagentskit-clean/bin/python -c "from pyagentskit.domain import OwnershipContext, MessageRecipient; assert OwnershipContext and MessageRecipient"
+          /tmp/pyagentskit-clean/bin/pip check
+      - name: Upload distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: pyagentskit-2.0.0a2-dist
+          path: dist/*
+          if-no-files-found: error
