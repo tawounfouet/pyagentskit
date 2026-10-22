@@ -225,11 +225,16 @@ class InboxStore(Protocol):
 @runtime_checkable
 class UnitOfWork(Protocol):
     runs: RunRepository
-    effects: EffectRepository
+    sessions: SessionRepository
+    conversations: ConversationRepository
+    messages: MessageRepository
     memories: MemoryRepository
+    effects: EffectRepository
     reconciliations: ReconciliationRepository
     approvals: ApprovalRepository
+    workers: WorkerRepository
     runtimes: RuntimeRepository
+    artifacts: ArtifactRepository
     outbox: OutboxStore
     audit: AuditStore
 
