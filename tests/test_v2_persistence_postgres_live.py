@@ -37,9 +37,8 @@ from pyagentskit.domain import (
 )
 from pyagentskit.postgres import AsyncPostgresPool, create_asyncpg_pool
 
-_GATE = (
-    os.getenv("PYAGENTSKIT_LIVE_POSTGRES") == "I_ACCEPT_DATABASE_WRITES"
-    and bool(os.getenv("PYAGENTSKIT_POSTGRES_DSN"))
+_GATE = os.getenv("PYAGENTSKIT_LIVE_POSTGRES") == "I_ACCEPT_DATABASE_WRITES" and bool(
+    os.getenv("PYAGENTSKIT_POSTGRES_DSN")
 )
 
 _SUFFIXES = (
@@ -71,9 +70,7 @@ async def _drop_tables(
 ) -> None:
     async with pool.acquire() as connection:
         for suffix in suffixes:
-            await connection.execute(
-                f"DROP TABLE IF EXISTS {prefix}_v2_{suffix} CASCADE"
-            )
+            await connection.execute(f"DROP TABLE IF EXISTS {prefix}_v2_{suffix} CASCADE")
 
 
 async def _lease_process_attempt(
