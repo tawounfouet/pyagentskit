@@ -46,6 +46,13 @@ _ENABLED = os.getenv("PYAGENTSKIT_LIVE_POSTGRES") == "I_ACCEPT_DATABASE_WRITES" 
 
 async def _drop_v2_tables(pool: AsyncPostgresPool, prefix: str) -> None:
     suffixes = (
+        "runtime_invocations",
+        "runtime_bindings",
+        "messages",
+        "conversations",
+        "sessions",
+        "workers",
+        "artifacts",
         "reconciliation_evidence",
         "reconciliation_cases",
         "effects",
