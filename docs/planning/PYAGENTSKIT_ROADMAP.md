@@ -152,7 +152,7 @@ Detailed milestone specifications:
 
 # 2.0.0a1 — Domain Foundations
 
-Status: **Released**
+Status: **Implemented — Qualification in progress**
 
 Goal:
 
@@ -308,7 +308,7 @@ Cancellation != rollback
 
 # 2.0.0a2 — Runtime Abstraction
 
-Status: **Released**
+Status: **Implemented — Qualification in progress**
 
 Goal:
 
