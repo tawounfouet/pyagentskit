@@ -33,12 +33,15 @@ from ...domain.entities import (
     MemoryEntry,
     MemoryScope,
     Run,
+    RuntimeBinding,
+    RuntimeInvocation,
 )
 from ...domain.events import IntegrationEvent
 from ...domain.lifecycle import (
     ApprovalScope,
     ApprovalStatus,
     EffectStatus,
+    RuntimeCapability,
     LeaseStatus,
     ReconciliationStatus,
     RunStatus,
@@ -57,8 +60,16 @@ from ...domain.shared import (
     ReconciliationCaseId,
     ReconciliationEvidenceId,
     RunId,
+    RuntimeBindingId,
+    RuntimeInvocationId,
     TenantId,
     WorkerId,
+)
+from ...domain.runtime import (
+    RuntimeHandle,
+    RuntimeQualificationLevel,
+    RuntimeStatus,
+    SideEffectControlLevel,
 )
 
 
@@ -377,6 +388,168 @@ def reconciliation_evidence_from_document(
         external_reference=_external_reference(document.get("external_reference")),
         payload_digest=None if digest is None else Fingerprint(str(digest)),
         raw_artifact_id=None if artifact is None else ArtifactId(str(artifact)),
+    )
+
+
+def runtime_binding_to_document(binding: RuntimeBinding) -> dict[str, object]:
+    return {
+        "id": str(binding.id),
+        "runtime_name": binding.runtime_name,
+        "capabilities": sorted(capability.value for capability in binding.capabilities),
+        "run_id": None if binding.run_id is None else str(binding.run_id),
+        "runtime_id": binding.runtime_id,
+        "runtime_family": binding.runtime_family,
+        "adapter_version": binding.adapter_version,
+        "runtime_version": binding.runtime_version,
+        "contract_version": binding.contract_version,
+        "required_capabilities": sorted(
+            capability.value for capability in binding.required_capabilities
+        ),
+        "selected_capabilities": (
+            None
+            if binding.selected_capabilities is None
+            else sorted(capability.value for capability in binding.selected_capabilities)
+        ),
+        "side_effect_control_level": int(binding.side_effect_control_level),
+        "qualification_level": int(binding.qualification_level),
+        "configuration_ref": binding.configuration_ref,
+        "selection_reason": binding.selection_reason,
+        "bound_at": binding.bound_at.isoformat(),
+    }
+
+
+def runtime_binding_from_document(document: Mapping[str, Any]) -> RuntimeBinding:
+    selected = document.get("selected_capabilities")
+    run_id = document.get("run_id")
+    return RuntimeBinding(
+        id=RuntimeBindingId(str(document["id"])),
+        runtime_name=str(document.get("runtime_name") or ""),
+        capabilities=frozenset(
+            RuntimeCapability(str(value))
+            for value in document.get("capabilities", ())
+        ),
+        run_id=None if run_id is None else RunId(str(run_id)),
+        runtime_id=None if document.get("runtime_id") is None else str(document["runtime_id"]),
+        runtime_family=(
+            None
+            if document.get("runtime_family") is None
+            else str(document["runtime_family"])
+        ),
+        adapter_version=(
+            None
+            if document.get("adapter_version") is None
+            else str(document["adapter_version"])
+        ),
+        runtime_version=(
+            None
+            if document.get("runtime_version") is None
+            else str(document["runtime_version"])
+        ),
+        contract_version=(
+            None
+            if document.get("contract_version") is None
+            else str(document["contract_version"])
+        ),
+        required_capabilities=frozenset(
+            RuntimeCapability(str(value))
+            for value in document.get("required_capabilities", ())
+        ),
+        selected_capabilities=(
+            None
+            if selected is None
+            else frozenset(RuntimeCapability(str(value)) for value in selected)
+        ),
+        side_effect_control_level=SideEffectControlLevel(
+            int(document["side_effect_control_level"])
+        ),
+        qualification_level=RuntimeQualificationLevel(
+            int(document["qualification_level"])
+        ),
+        configuration_ref=(
+            None
+            if document.get("configuration_ref") is None
+            else str(document["configuration_ref"])
+        ),
+        selection_reason=str(document.get("selection_reason") or ""),
+        bound_at=datetime.fromisoformat(str(document["bound_at"])),
+    )
+
+
+def runtime_invocation_to_document(invocation: RuntimeInvocation) -> dict[str, object]:
+    handle = invocation.handle
+    return {
+        "id": str(invocation.id),
+        "run_id": str(invocation.run_id),
+        "binding_id": str(invocation.binding_id),
+        "input": invocation.input,
+        "runtime_id": invocation.runtime_id,
+        "status": invocation.status.value,
+        "handle": (
+            None
+            if handle is None
+            else {
+                "adapter_name": handle.adapter_name,
+                "external_id": handle.external_id,
+                "metadata": dict(handle.metadata),
+            }
+        ),
+        "started_at": (
+            None if invocation.started_at is None else invocation.started_at.isoformat()
+        ),
+        "completed_at": (
+            None
+            if invocation.completed_at is None
+            else invocation.completed_at.isoformat()
+        ),
+        "parent_invocation_id": (
+            None
+            if invocation.parent_invocation_id is None
+            else str(invocation.parent_invocation_id)
+        ),
+        "restart_reason": invocation.restart_reason,
+        "checkpoint_origin": invocation.checkpoint_origin,
+        "version": invocation.version.value,
+    }
+
+
+def runtime_invocation_from_document(
+    document: Mapping[str, Any],
+) -> RuntimeInvocation:
+    handle_document = document.get("handle")
+    handle = (
+        None
+        if handle_document is None
+        else RuntimeHandle(
+            adapter_name=str(handle_document["adapter_name"]),
+            external_id=str(handle_document["external_id"]),
+            metadata=dict(handle_document.get("metadata", {})),
+        )
+    )
+    parent = document.get("parent_invocation_id")
+    return RuntimeInvocation(
+        id=RuntimeInvocationId(str(document["id"])),
+        run_id=RunId(str(document["run_id"])),
+        binding_id=RuntimeBindingId(str(document["binding_id"])),
+        input=str(document["input"]),
+        runtime_id=None if document.get("runtime_id") is None else str(document["runtime_id"]),
+        status=RuntimeStatus(str(document["status"])),
+        handle=handle,
+        started_at=_datetime(document.get("started_at")),
+        completed_at=_datetime(document.get("completed_at")),
+        parent_invocation_id=(
+            None if parent is None else RuntimeInvocationId(str(parent))
+        ),
+        restart_reason=(
+            None
+            if document.get("restart_reason") is None
+            else str(document["restart_reason"])
+        ),
+        checkpoint_origin=(
+            None
+            if document.get("checkpoint_origin") is None
+            else str(document["checkpoint_origin"])
+        ),
+        version=AggregateVersion(int(document["version"])),
     )
 
 
