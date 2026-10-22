@@ -487,7 +487,7 @@ authority
 
 # 2.0.0a4 — Persistence V2
 
-Status: **Next**
+Status: **Qualified — Release pending**
 
 Goal:
 
@@ -577,7 +577,7 @@ Inbox dedup != Effect idempotency
 
 # 2.0.0b1 — Governance, Security & Audit
 
-Status: **Planned**
+Status: **Next**
 
 Goal:
 

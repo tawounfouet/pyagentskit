@@ -58,6 +58,10 @@ class MessageId(Identifier):
     pass
 
 
+class MemoryEntryId(Identifier):
+    pass
+
+
 class EffectId(Identifier):
     pass
 

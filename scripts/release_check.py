@@ -15,15 +15,18 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / "release-dist"
-EXPECTED_VERSION = "2.0.0a3"
+EXPECTED_VERSION = "2.0.0a4"
 REQUIRED_SDIST_FILES = {
     "README.md",
     "CHANGELOG.md",
     "docs/specs/MANIFEST.md",
     "docs/planning/49_PYAGENTSKIT_V2_IMPLEMENTATION_NEXT_STEPS.md",
     "docs/planning/PYAGENTSKIT_ROADMAP.md",
-    "docs/releases/V2_0_0A3_RELEASE_NOTES.md",
-    "docs/specs/milestones/52_PYAGENTSKIT_MILESTONE_2_0_0A3_EFFECTS_RECOVERY_CORE_SPEC.md",
+    "docs/releases/V2_0_0A4_RELEASE_NOTES.md",
+    "docs/releases/V2_0_0A4_QUALIFICATION_EVIDENCE.md",
+    "docs/guides/V2_PERSISTENCE.md",
+    "docs/specs/milestones/53_PYAGENTSKIT_MILESTONE_2_0_0A4_PERSISTENCE_V2_SPEC.md",
+    "examples/v2_persistence.py",
 }
 
 
@@ -193,7 +196,11 @@ def smoke_install(wheel: Path) -> None:
             "RuntimeRecoveryExecutor); "
             "assert Run().transition(RunStatus.RUNNING).status is RunStatus.RUNNING; "
             "assert Effect and ReconciliationEvidence and RecoveryPlanner; "
-            "assert EffectExecutionGate and ReconcileEffect and RuntimeRecoveryExecutor"
+            "assert EffectExecutionGate and ReconcileEffect and RuntimeRecoveryExecutor; "
+            "from pyagentskit.adapters.persistence import (SQLiteRunRepository, "
+            "SQLiteUnitOfWork); "
+            "from pyagentskit.contracts import UnitOfWork; "
+            "assert SQLiteRunRepository and SQLiteUnitOfWork and UnitOfWork"
         )
         run(str(python), "-c", probe, cwd=target)
         run(str(python), "-m", "pyagentskit", "--version", cwd=target)
@@ -209,6 +216,7 @@ def smoke_install(wheel: Path) -> None:
         run(str(python), str(ROOT / "examples" / "distributed_coordination.py"), cwd=target)
         run(str(python), str(ROOT / "examples" / "distributed_durable_agent.py"), cwd=target)
         run(str(python), str(ROOT / "examples" / "v2_effect_recovery.py"), cwd=target)
+        run(str(python), str(ROOT / "examples" / "v2_persistence.py"), cwd=target)
 
 
 def main() -> None:
@@ -228,6 +236,7 @@ def main() -> None:
         "-rs",
         pythonpath=ROOT / "src",
     )
+    run(sys.executable, "-m", "coverage", "report", "--fail-under=90")
     run(
         sys.executable,
         "scripts/benchmark_runtime.py",

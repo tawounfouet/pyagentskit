@@ -1,6 +1,6 @@
 # PyAgentsKit
 
-[![Version](https://img.shields.io/badge/version-2.0.0a3-blue)](#release-status)
+[![Version](https://img.shields.io/badge/version-2.0.0a4-blue)](#release-status)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](pyproject.toml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 
@@ -12,16 +12,20 @@ mono-agent execution.
 
 ## Release status
 
-Version `2.0.0a3` adds the V2 Effects & Recovery Core while preserving the stable V1 public API.
+Version `2.0.0a4` adds the V2 persistence foundation while preserving the stable V1 public API.
 
 The V2 reliability layer now includes:
 
-- explicit Effect intent, idempotency identity, fingerprints and non-replayable terminal outcomes;
-- a durable pre-send Effect gate that separates local state commits from external I/O;
-- first-class reconciliation evidence, strategies and manual-review outcomes;
-- a pure deterministic `RecoveryPlanner` with ownership-bound plans and canonical `NextAction`;
-- W1-W5 crash-window qualification, including UNKNOWN-before-retry and stale-plan rejection;
-- Native runtime restart guarded by the same recovery decision boundary.
+- explicit Effect intent, reconciliation and ownership-bound recovery from `2.0.0a3`;
+- typed repository contracts for Run, Session, Conversation, Message, Memory, Effect,
+  Reconciliation, Approval, Lease, Worker, Runtime and Artifact state;
+- in-memory, SQLite and PostgreSQL persistence implementations;
+- optimistic concurrency/CAS and durable Effect idempotency conflict detection;
+- monotonic fencing and one-active-lease protection;
+- transactional Unit of Work boundaries for domain state, Audit and Outbox;
+- durable Outbox claim/reclaim and Inbox digest-conflict semantics;
+- versioned SQLite/PostgreSQL V2 migrations;
+- shared persistence contract qualification, including real PostgreSQL and multi-process tests.
 
 V2 contracts remain available through `pyagentskit.domain`, `pyagentskit.application`,
 `pyagentskit.contracts` and `pyagentskit.adapters`. The V1 baseline continues to include:
@@ -123,6 +127,8 @@ See the [distributed operations guide](docs/guides/DISTRIBUTED_OPERATIONS.md) an
 [worker runbook](docs/runbooks/DISTRIBUTED_WORKER_OPERATIONS.md) for health, drain and incidents.
 See the [production state guide](docs/guides/PRODUCTION_STATE_STORES.md) for PostgreSQL sessions,
 memory, approvals, object artifacts, RLS and SQLite migration.
+See the [V2 persistence guide](docs/guides/V2_PERSISTENCE.md) for the A4 repository contracts,
+Unit of Work, CAS/idempotency/fencing rules, Outbox/Inbox semantics and PostgreSQL qualification.
 
 ## Provider usage
 

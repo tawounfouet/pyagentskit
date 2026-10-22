@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from datetime import datetime
+from enum import StrEnum
 from typing import TypeVar
 
 from .effects import Effect as Effect
@@ -42,6 +43,7 @@ from .shared import (
     ExternalReference,
     FencingToken,
     LeaseId,
+    MemoryEntryId,
     MessageId,
     ParticipantId,
     RunId,
@@ -155,6 +157,48 @@ class Session:
     tenant_id: TenantId = field(default_factory=lambda: TenantId.new("tenant"))
     version: AggregateVersion = field(default_factory=AggregateVersion)
     created_at: datetime = field(default_factory=utc_now)
+
+
+class MemoryScope(StrEnum):
+    SESSION = "session"
+    AGENT = "agent"
+    TENANT = "tenant"
+    WORKSPACE = "workspace"
+    CUSTOM = "custom"
+
+
+@dataclass(frozen=True, slots=True)
+class MemoryEntry:
+    id: MemoryEntryId = field(default_factory=lambda: MemoryEntryId.new("memory"))
+    tenant_id: TenantId = field(default_factory=lambda: TenantId.new("tenant"))
+    scope: MemoryScope = MemoryScope.SESSION
+    scope_id: str | None = None
+    key: str = ""
+    value: Mapping[str, object] = field(default_factory=dict)
+    version: AggregateVersion = field(default_factory=AggregateVersion)
+    created_at: datetime = field(default_factory=utc_now)
+    updated_at: datetime = field(default_factory=utc_now)
+    metadata: tuple[tuple[str, str], ...] = ()
+
+    def __post_init__(self) -> None:
+        if not self.key:
+            raise ValueError("memory key is required")
+        scoped = {
+            MemoryScope.SESSION,
+            MemoryScope.AGENT,
+            MemoryScope.WORKSPACE,
+            MemoryScope.CUSTOM,
+        }
+        if self.scope in scoped and not self.scope_id:
+            raise ValueError(f"{self.scope.value} memory requires a scope_id")
+
+    def revise(self, value: Mapping[str, object]) -> MemoryEntry:
+        return replace(
+            self,
+            value=dict(value),
+            version=self.version.next(),
+            updated_at=utc_now(),
+        )
 
 
 @dataclass(frozen=True, slots=True)

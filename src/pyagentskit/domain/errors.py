@@ -51,3 +51,23 @@ class StaleRecoveryPlanError(DomainError):
 
 class ReconciliationError(DomainError):
     """Raised when an Effect cannot be reconciled safely."""
+
+
+class PersistenceError(DomainError):
+    """Base error raised by a V2 persistence adapter."""
+
+
+class ConcurrencyConflictError(PersistenceError):
+    """Raised when an optimistic concurrency compare-and-swap fails."""
+
+
+class DuplicateAggregateError(PersistenceError):
+    """Raised when an aggregate is inserted twice without idempotent semantics."""
+
+
+class PersistenceCorruptionError(PersistenceError):
+    """Raised when durable data cannot reconstruct a valid domain object."""
+
+
+class InboxDigestConflictError(PersistenceError):
+    """Raised when one external event id is reused with a different payload digest."""

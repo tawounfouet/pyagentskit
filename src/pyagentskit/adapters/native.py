@@ -68,7 +68,7 @@ class NativeRuntimeAdapter(AgentRuntimeAdapter):
         self,
         engine: NativeRuntimeEngine,
         *,
-        adapter_version: str = "2.0.0a3",
+        adapter_version: str = "2.0.0a4",
         runtime_version: str | None = None,
         qualification_level: RuntimeQualificationLevel = RuntimeQualificationLevel.L1,
     ) -> None:
