@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import unittest
 from collections.abc import Mapping, Sequence
-from dataclasses import replace
 from contextlib import AbstractAsyncContextManager
+from dataclasses import replace
 from datetime import UTC, datetime
 from typing import Any
 
@@ -506,7 +506,10 @@ class PostgresV2PersistenceTests(unittest.IsolatedAsyncioTestCase):
 
         runs = PostgresV2RunRepository(self.pool, table_prefix="pakfactory")
         bound = bind_postgres_catalog(runs._db)
-        self.assertEqual(set(bound), {"sessions", "conversations", "messages", "workers", "artifacts"})
+        self.assertEqual(
+            set(bound),
+            {"sessions", "conversations", "messages", "workers", "artifacts"},
+        )
 
     async def test_codec_corruption_and_non_serializable_payloads_fail_closed(self) -> None:
         with self.assertRaises(PersistenceError):
