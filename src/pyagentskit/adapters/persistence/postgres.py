@@ -76,7 +76,7 @@ def _text(value: object | None) -> str | None:
 
 
 class _PostgresV2Database:
-    schema_version = 1
+    schema_version = 2
 
     def __init__(
         self,
@@ -116,10 +116,14 @@ class _PostgresV2Database:
                     current = 0 if row is None else int(row["version"])
                     if current > self.schema_version:
                         raise PersistenceError("PostgreSQL V2 schema is newer than this package")
-                    if current == 0:
+                    migrations = {
+                        1: "0001_v2_core.sql",
+                        2: "0002_v2_catalog.sql",
+                    }
+                    for version in range(current + 1, self.schema_version + 1):
                         migration = (
                             files("pyagentskit.adapters.persistence.migrations.postgres")
-                            .joinpath("0001_v2_core.sql")
+                            .joinpath(migrations[version])
                             .read_text(encoding="utf-8")
                             .replace("__PFX__", self.table_prefix)
                         )
