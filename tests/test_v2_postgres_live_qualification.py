@@ -38,9 +38,8 @@ from pyagentskit.domain import (
 )
 from pyagentskit.postgres import AsyncPostgresPool, create_asyncpg_pool
 
-_ENABLED = (
-    os.getenv("PYAGENTSKIT_LIVE_POSTGRES") == "I_ACCEPT_DATABASE_WRITES"
-    and bool(os.getenv("PYAGENTSKIT_POSTGRES_DSN"))
+_ENABLED = os.getenv("PYAGENTSKIT_LIVE_POSTGRES") == "I_ACCEPT_DATABASE_WRITES" and bool(
+    os.getenv("PYAGENTSKIT_POSTGRES_DSN")
 )
 
 
@@ -61,9 +60,7 @@ async def _drop_v2_tables(pool: AsyncPostgresPool, prefix: str) -> None:
     )
     async with pool.acquire() as connection:
         for suffix in suffixes:
-            await connection.execute(
-                f"DROP TABLE IF EXISTS {prefix}_v2_{suffix} CASCADE"
-            )
+            await connection.execute(f"DROP TABLE IF EXISTS {prefix}_v2_{suffix} CASCADE")
 
 
 @unittest.skipUnless(_ENABLED, "PostgreSQL V2 live qualification is opt-in")
