@@ -67,9 +67,7 @@ class PostgresPersistenceCommonContracts(
     async def asyncTearDown(self) -> None:
         async with self.pool.acquire() as connection:
             for suffix in _SUFFIXES:
-                await connection.execute(
-                    f"DROP TABLE IF EXISTS {self.prefix}_v2_{suffix} CASCADE"
-                )
+                await connection.execute(f"DROP TABLE IF EXISTS {self.prefix}_v2_{suffix} CASCADE")
         await self.pool.close()
 
     async def make_run_repository(self):
