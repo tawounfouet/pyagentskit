@@ -31,10 +31,6 @@ from pyagentskit.adapters.persistence._catalog_codec import (
     session_to_document,
     worker_to_document,
 )
-from pyagentskit.adapters.persistence.postgres_catalog import (
-    bind_postgres_catalog,
-    make_postgres_catalog,
-)
 from pyagentskit.adapters.persistence._codec import (
     approval_to_document,
     audit_to_document,
@@ -49,15 +45,19 @@ from pyagentskit.adapters.persistence._codec import (
     reconciliation_case_to_document,
     run_to_document,
 )
+from pyagentskit.adapters.persistence.postgres_catalog import (
+    bind_postgres_catalog,
+    make_postgres_catalog,
+)
 from pyagentskit.contracts import InboxRecord, InboxStatus, OutboxStatus
 from pyagentskit.domain import (
     Approval,
     ApprovalStatus,
     Artifact,
     AuditEvent,
+    ConcurrencyConflictError,
     Conversation,
     ConversationMessage,
-    ConcurrencyConflictError,
     DuplicateAggregateError,
     Effect,
     FencingToken,
