@@ -454,6 +454,25 @@ class EffectExecutionGateTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(repo.save_history, [EffectStatus.STARTED])
         self.assertEqual(audit.events[-1].event_type, "effect.started")
 
+    async def test_expired_ownership_cannot_cross_protected_effect_gate(self) -> None:
+        run = running_run()
+        repo = MemoryEffectRepository()
+        gate = EffectExecutionGate(effects=repo, audit=MemoryAuditSink())
+        expired = OwnershipContext(
+            worker_id=WorkerId("worker-a"),
+            lease_id=LeaseId("lease-expired"),
+            resource_identity=ResourceIdentity("run", str(run.id)),
+            fencing_token=FencingToken(1),
+            expires_at=datetime.now(UTC) - timedelta(seconds=1),
+        )
+
+        with self.assertRaises(InvalidTransitionError):
+            await gate.prepare(
+                Effect(run_id=run.id),
+                ownership=expired,
+                protected=True,
+            )
+
     async def test_existing_succeeded_effect_is_reused_without_replay(self) -> None:
         key = IdempotencyKey("run", "publish-package")
         fingerprint = InputFingerprint.from_text("pkg=pyagentskit;version=2.0.0a3")
