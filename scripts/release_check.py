@@ -23,6 +23,7 @@ REQUIRED_SDIST_FILES = {
     "docs/planning/49_PYAGENTSKIT_V2_IMPLEMENTATION_NEXT_STEPS.md",
     "docs/planning/PYAGENTSKIT_ROADMAP.md",
     "docs/releases/V2_0_0A4_RELEASE_NOTES.md",
+    "docs/releases/V2_0_0A4_QUALIFICATION_EVIDENCE.md",
     "docs/guides/V2_PERSISTENCE.md",
     "docs/specs/milestones/53_PYAGENTSKIT_MILESTONE_2_0_0A4_PERSISTENCE_V2_SPEC.md",
     "examples/v2_persistence.py",
