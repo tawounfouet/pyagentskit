@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import os
 import unittest
+from multiprocessing import get_context
 from uuid import uuid4
 
 from pyagentskit.adapters.persistence import (
@@ -61,6 +62,39 @@ async def _drop_v2_tables(pool: AsyncPostgresPool, prefix: str) -> None:
     async with pool.acquire() as connection:
         for suffix in suffixes:
             await connection.execute(f"DROP TABLE IF EXISTS {prefix}_v2_{suffix} CASCADE")
+
+
+def _lease_process_worker(
+    dsn: str,
+    prefix: str,
+    resource: str,
+    token_value: int,
+    worker_id: str,
+    result_queue: object,
+) -> None:
+    async def run() -> str:
+        pool = await create_asyncpg_pool(dsn, min_size=1, max_size=2)
+        try:
+            repository = PostgresV2LeaseRepository(pool, table_prefix=prefix)
+            lease = Lease(resource=resource).acquire(
+                WorkerId(worker_id),
+                FencingToken(token_value),
+            )
+            try:
+                await repository.add(lease)
+                return "success"
+            except ConcurrencyConflictError:
+                return "conflict"
+        finally:
+            close = getattr(pool, "close", None)
+            if close is not None:
+                await close()
+
+    try:
+        outcome = asyncio.run(run())
+    except Exception as exc:  # pragma: no cover - surfaced to parent assertion
+        outcome = f"error:{type(exc).__name__}:{exc}"
+    result_queue.put(outcome)
 
 
 @unittest.skipUnless(_ENABLED, "PostgreSQL V2 live qualification is opt-in")
@@ -152,6 +186,59 @@ class PostgresV2LiveQualification(unittest.IsolatedAsyncioTestCase):
             leases_b.next_fencing_token("run:counter"),
         )
         self.assertEqual({item.value for item in tokens}, {1, 2})
+
+    async def test_multi_process_lease_has_one_owner_then_monotonic_takeover(self) -> None:
+        resource = "run:multiprocess"
+        leases = PostgresV2LeaseRepository(self.pool, table_prefix=self.prefix)
+        token = await leases.next_fencing_token(resource)
+
+        context = get_context("spawn")
+        result_queue = context.Queue()
+        dsn = os.environ["PYAGENTSKIT_POSTGRES_DSN"]
+        processes = [
+            context.Process(
+                target=_lease_process_worker,
+                args=(
+                    dsn,
+                    self.prefix,
+                    resource,
+                    token.value,
+                    f"worker-{index}",
+                    result_queue,
+                ),
+            )
+            for index in range(2)
+        ]
+        for process in processes:
+            process.start()
+        for process in processes:
+            await asyncio.to_thread(process.join, 20)
+            if process.is_alive():
+                process.terminate()
+                process.join()
+                self.fail("multiprocess lease worker did not terminate")
+            self.assertEqual(process.exitcode, 0)
+
+        outcomes = [
+            await asyncio.to_thread(result_queue.get, True, 5)
+            for _ in processes
+        ]
+        self.assertCountEqual(outcomes, ["success", "conflict"])
+
+        current = await leases.get_current(resource)
+        self.assertIsNotNone(current)
+        assert current is not None
+        released = current.release()
+        await leases.save(released, expected_version=current.version)
+
+        takeover_token = await leases.next_fencing_token(resource)
+        self.assertGreater(takeover_token, token)
+        takeover = Lease(resource=resource).acquire(
+            WorkerId("worker-takeover"),
+            takeover_token,
+        )
+        await leases.add(takeover)
+        self.assertEqual(await leases.get_current(resource), takeover)
 
     async def test_parallel_outbox_claims_are_disjoint_and_inbox_deduplicates(self) -> None:
         outbox_a = PostgresV2OutboxStore(self.pool, table_prefix=self.prefix)
