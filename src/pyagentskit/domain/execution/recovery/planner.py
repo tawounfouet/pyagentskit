@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ...lifecycle import ApprovalStatus, RuntimeCapability
+from ...lifecycle import ApprovalStatus, ReconciliationStatus, RuntimeCapability
 from ...shared import EffectId, ReconciliationCaseId, RuntimeInvocationId
 from .model import (
     NextAction,
@@ -57,7 +57,7 @@ class RecoveryPlanner:
                 ),
                 None,
             )
-            if case is not None and case.status.value == "manual_review":
+            if case is not None and case.status is ReconciliationStatus.MANUAL_REVIEW:
                 return self._plan(
                     context,
                     NextAction.MANUAL_INTERVENTION,
